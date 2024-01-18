@@ -139,11 +139,27 @@ zcat < ~/mimic/hosp/admissions.csv.gz | awk -F, '{print $13}' | grep -v 'race' |
 
 7. _To compress, or not to compress. That's the question._ Let's focus on the big data file `labevents.csv.gz`. Compare compressed gz file size to the uncompressed file size. Compare the run times of `zcat < ~/mimic/hosp/labevents.csv.gz | wc -l` versus `wc -l labevents.csv`. Discuss the trade off between storage and speed for big data files. (Hint: `gzip -dk < FILENAME.gz > ./FILENAME`. Remember to delete the large `labevents.csv` file after the exercise.)
 
+**Answer:**
 ```{bash}
 #| eval: false
+gzip -dk < ~/mimic/hosp/labevents.csv.gz > ~/mimic/hosp/labevents.csv
 ```
 
-## Q4. Who's popular in Price and Prejudice
+```{bash}
+ls -l ~/mimic/hosp/labevents.csv
+ls -l ~/mimic/hosp/labevents.csv.gz
+```
+The file size for the compressed file `labevents.csv.gz` is 1.9GB, while the file size for the uncompressed file `labevents.csv` is 13.7GB. The file size for the uncompressed file is much larger and takes up more space than the file size for the compressed file. 
+
+```{bash}
+time zcat < ~/mimic/hosp/labevents.csv.gz | wc -l
+```
+```{bash}
+time wc -l ~/mimic/hosp/labevents.csv
+```
+The run time of `zcat < ~/mimic/hosp/labevents.csv.gz | wc -l` was 18.3 seconds, while the run time of `wc -l ~/mimic/hosp/labevents.csv` was 4.2 seconds. Although the file size of the compressed file was smaller, it did take longer to run the command. In contrast, the file size of the uncompressed file was large, but the run time for the command was much faster. Thus, there are trade-offs between having a small, compressed file that runs slower versus a large, uncompressed file that runs faster. 
+
+## Q4. Who's popular in Pride and Prejudice
 
 1. You and your friend just have finished reading *Pride and Prejudice* by Jane Austen. Among the four main characters in the book, Elizabeth, Jane, Lydia, and Darcy, your friend thinks that Darcy was the most mentioned. You, however, are certain it was Elizabeth. Obtain the full text of the novel from <http://www.gutenberg.org/cache/epub/42671/pg42671.txt> and save to your local folder. 
 ```{bash}
@@ -189,6 +205,56 @@ Explain the output. Explain the meaning of `"$1"`, `"$2"`, and `"$3"` in this sh
 ## Q5. More fun with Linux
 
 Try following commands in Bash and interpret the results: `cal`, `cal 2024`, `cal 9 1752` (anything unusual?), `date`, `hostname`, `arch`, `uname -a`, `uptime`, `who am i`, `who`, `w`, `id`, `last | head`, `echo {con,pre}{sent,fer}{s,ed}`, `time sleep 5`, `history | tail`.
+
+```{bash}
+cal
+```
+The `cal` command displays the calendar for this month and year, January 2024. 
+
+```{bash}
+cal 2024
+```
+The `cal 2024` command displays the calendars for all 12 months in the 2024 year. 
+
+```{bash}
+cal 9 1752
+```
+The `cal 9 1752` command displays the calendar for the month of September in the year 1752. This calendar is unusual because it skips the dates between the 3rd and the 13th. 
+
+```{bash}
+date
+```
+The `date` command displays today's date and time. 
+
+```{bash}
+hostname
+```
+The `hostname` command displays the name of the host system, which is my Macbook Pro in this case. 
+
+```{bash}
+arch
+```
+The `arch` command displays the architecture type of my Mac, which has a 64-bit ARM architecture. 
+
+```{bash}
+uname -a
+```
+The `uname -a` command displays information about my Mac system, and the `-a` option is used to display all of the available system characteristics. The information that is displayed includes the Kernel name, network node hostname, kernel release date, kernel version, machine hardware name, hardware platform, and operating system. 
+
+```{bash}
+uptime
+```
+The `uptime` command shows how long my Mac has been running. The current time is 12:01pm. My Mac has been up for 47 days and 21:43 hours. There is 1 user. The load average of my Mac is 1.70 over the last 1 minute, 1.54 over the last 5 minutes, and 1.47 over the last 15 minutes. 
+
+```{bash}
+who am i
+```
+The `who am i` command shows who is on my Mac. It displays my log-in name and today's date and current time. 
+
+```{bash}
+who
+```
+The `who` command shows also shows who is on my Mac, with slightly different information. It displays my log-in name 
 
 ## Q6. Book
 
