@@ -3350,9 +3350,9 @@ drwxr-xr-x@ 11 jennynguyen  staff    352 Jan 17 14:49 icu</code></pre>
 <div class="cell-output cell-output-stdout">
 <pre><code> 118171368
 
-real    0m18.181s
-user    0m22.262s
-sys 0m1.751s</code></pre>
+real    0m18.919s
+user    0m22.129s
+sys 0m2.445s</code></pre>
 </div>
 </div>
 <div class="cell" data-layout-align="center">
@@ -3360,9 +3360,9 @@ sys 0m1.751s</code></pre>
 <div class="cell-output cell-output-stdout">
 <pre><code> 118171368 /Users/jennynguyen/mimic/hosp/labevents.csv
 
-real    0m6.780s
-user    0m4.318s
-sys 0m1.552s</code></pre>
+real    0m6.048s
+user    0m4.231s
+sys 0m1.501s</code></pre>
 </div>
 </div>
 <p>The run time of <code>zcat &lt; ~/mimic/hosp/labevents.csv.gz | wc -l</code> was 18.3 seconds, while the run time of <code>wc -l ~/mimic/hosp/labevents.csv</code> was 4.2 seconds. Although the file size of the compressed file was smaller, it did take longer to run the command. In contrast, the file size of the uncompressed file was large, but the run time for the command was much faster. Thus, there are trade-offs between having a small, compressed file that runs slower versus a large, uncompressed file that runs faster.</p>
@@ -3485,7 +3485,7 @@ Su Mo Tu We Th Fr Sa
 <div class="cell" data-layout-align="center">
 <div class="sourceCode cell-code" id="cb52"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb52-1"><a href="#cb52-1" aria-hidden="true" tabindex="-1"></a><span class="fu">date</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>Thu Jan 18 12:17:16 PST 2024</code></pre>
+<pre><code>Thu Jan 18 14:07:04 PST 2024</code></pre>
 </div>
 </div>
 <p>The <code>date</code> command displays today’s date and time.</p>
@@ -3513,24 +3513,78 @@ Su Mo Tu We Th Fr Sa
 <div class="cell" data-layout-align="center">
 <div class="sourceCode cell-code" id="cb60"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb60-1"><a href="#cb60-1" aria-hidden="true" tabindex="-1"></a><span class="fu">uptime</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>12:17  up 47 days, 21:59, 1 user, load averages: 2.38 1.87 1.67</code></pre>
+<pre><code>14:07  up 47 days, 23:49, 1 user, load averages: 2.90 1.81 1.73</code></pre>
 </div>
 </div>
 <p>The <code>uptime</code> command shows how long my Mac has been running. The current time is 12:01pm. My Mac has been up for 47 days and 21:43 hours. There is 1 user. The load average of my Mac is 1.70 over the last 1 minute, 1.54 over the last 5 minutes, and 1.47 over the last 15 minutes.</p>
 <div class="cell" data-layout-align="center">
 <div class="sourceCode cell-code" id="cb62"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb62-1"><a href="#cb62-1" aria-hidden="true" tabindex="-1"></a><span class="fu">who</span> am i</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>jennynguyen                   Jan 18 12:17 </code></pre>
+<pre><code>jennynguyen                   Jan 18 14:07 </code></pre>
 </div>
 </div>
-<p>The <code>who am i</code> command shows who is on my Mac. It displays my log-in name and today’s date and current time.</p>
+<p>The <code>who am i</code> command shows who is logged in on my Mac. It displays my log-in name and today’s date and current time.</p>
 <div class="cell" data-layout-align="center">
 <div class="sourceCode cell-code" id="cb64"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb64-1"><a href="#cb64-1" aria-hidden="true" tabindex="-1"></a><span class="fu">who</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>jennynguyen      console      Dec  1 14:19 </code></pre>
 </div>
 </div>
-<p>The <code>who</code> command shows also shows who is on my Mac, with slightly different information. It displays my log-in name</p>
+<p>The <code>who</code> command also shows who is logged in on my Mac, with slightly different information. It displays my log-in name. The terminal name is console. The time that I logged in was on December 1st at 2:19pm.</p>
+<div class="cell" data-layout-align="center">
+<div class="sourceCode cell-code" id="cb66"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb66-1"><a href="#cb66-1" aria-hidden="true" tabindex="-1"></a><span class="fu">w</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>14:07  up 47 days, 23:49, 1 user, load averages: 2.90 1.81 1.73
+USER     TTY      FROM              LOGIN@  IDLE WHAT
+jennynguyen console  -                01Dec23 47days -</code></pre>
+</div>
+</div>
+<p>The <code>w</code> command also shows who is logged in on my Mac and what the current activity is. It displays the current time, which is 1:25pm. My Mac has been up running for 47 days and 23:07 hours. There is 1 user logged into my Mac, and the load averages are 1.66 over the last 1 minute, 2.09 over the last 5 minutes, and 2.11 over the last 15 minutes. It also displays my log-in name. The terminal name is console. I logged in on December 1st, and my Mac has been idle for 47 days.</p>
+<div class="cell" data-layout-align="center">
+<div class="sourceCode cell-code" id="cb68"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb68-1"><a href="#cb68-1" aria-hidden="true" tabindex="-1"></a><span class="fu">id</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>uid=501(jennynguyen) gid=20(staff) groups=20(staff),12(everyone),61(localaccounts),79(_appserverusr),80(admin),81(_appserveradm),98(_lpadmin),701(com.apple.sharepoint.group.1),33(_appstore),100(_lpoperator),204(_developer),250(_analyticsusers),395(com.apple.access_ftp),398(com.apple.access_screensharing),399(com.apple.access_ssh),400(com.apple.access_remote_ae)</code></pre>
+</div>
+</div>
+<p>The <code>id</code> command shows the user and group names, as well as the IDs that are associated with each user or group.</p>
+<div class="cell" data-layout-align="center">
+<div class="sourceCode cell-code" id="cb70"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb70-1"><a href="#cb70-1" aria-hidden="true" tabindex="-1"></a><span class="fu">last</span> <span class="kw">|</span> <span class="fu">head</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>jennynguyen  ttys001                   Thu Jan 18 13:55 - 13:55  (00:00)
+jennynguyen  ttys001                   Thu Jan 18 13:52 - 13:52  (00:00)
+jennynguyen  ttys001                   Thu Jan 18 13:51 - 13:51  (00:00)
+jennynguyen  ttys001                   Thu Jan 11 15:45 - 15:45  (00:00)
+jennynguyen  ttys000                   Tue Jan  9 19:40 - 19:40  (00:00)
+jennynguyen  ttys000                   Tue Jan  9 19:40 - 19:40  (00:00)
+jennynguyen  ttys000                   Tue Jan  9 19:39 - 19:39  (00:00)
+jennynguyen  ttys000                   Tue Jan  9 19:39 - 19:39  (00:00)
+jennynguyen  ttys000                   Tue Jan  9 16:10 - 16:10  (00:00)
+jennynguyen  ttys000                   Tue Jan  9 13:08 - 13:08  (00:00)</code></pre>
+</div>
+</div>
+<p>The <code>last</code> command shows a list of the last log-ins of users and terminals, starting from the most recent time. This command is piped into the <code>head</code> command, which displays only the first few lines of the list. The output displays my log-in name, the terminal name, the start and stop time of each session, and the duration of each session.</p>
+<div class="cell" data-layout-align="center">
+<div class="sourceCode cell-code" id="cb72"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb72-1"><a href="#cb72-1" aria-hidden="true" tabindex="-1"></a><span class="bu">echo</span> <span class="dt">{con</span><span class="op">,</span><span class="dt">pre}{sent</span><span class="op">,</span><span class="dt">fer}{s</span><span class="op">,</span><span class="dt">ed}</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>consents consented confers confered presents presented prefers prefered</code></pre>
+</div>
+</div>
+<p>The <code>echo {con,pre}{sent,fer}{s,ed}</code> command prints all of the words that start with “con-” or “pre-”, are followed by “-sent-” or “-fer-”, and end with “-s” or “-ed”.</p>
+<div class="cell" data-layout-align="center">
+<div class="sourceCode cell-code" id="cb74"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb74-1"><a href="#cb74-1" aria-hidden="true" tabindex="-1"></a><span class="bu">time</span> sleep 5</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+real    0m5.002s
+user    0m0.000s
+sys 0m0.001s</code></pre>
+</div>
+</div>
+<p>The <code>time sleep 5</code> command shows that it took 5.009 seconds to run the <code>sleep 5</code> command. The <code>sleep 5</code> command suspends execution for 5 seconds.</p>
+<div class="cell" data-layout-align="center">
+<div class="sourceCode cell-code" id="cb76"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb76-1"><a href="#cb76-1" aria-hidden="true" tabindex="-1"></a><span class="bu">history</span> <span class="kw">|</span> <span class="fu">tail</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>The <code>history | tail</code> command, when run in terminal, shows a list of commands that were previously executed, with the <code>tail</code> command displaying only the last few lines of the list.</p>
+<p>27 man uname -a | head -30 28 man uptime | head -30 29 man who am i 30 man who | head -30 31 man w | head -30 32 man id | head -30 33 man last | head -30 34 man sleep | head -30 35 man history | head -30 36 history | tail</p>
 </section>
 <section id="q6.-book" class="level2">
 <h2 class="anchored" data-anchor-id="q6.-book">Q6. Book</h2>
