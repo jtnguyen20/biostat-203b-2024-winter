@@ -3117,7 +3117,7 @@ loaded via a namespace (and not attached):
 -rw-rw-r--@  1 jennynguyen  staff  13332 Jan  5  2023 CHANGELOG.txt
 -rw-rw-r--@  1 jennynguyen  staff   2518 Jan  5  2023 LICENSE.txt
 -rw-rw-r--@  1 jennynguyen  staff   2884 Jan  6  2023 SHA256SUMS.txt
-drwxr-xr-x@ 25 jennynguyen  staff    800 Jan 18 10:29 hosp
+drwxr-xr-x@ 24 jennynguyen  staff    768 Jan 18 19:32 hosp
 drwxr-xr-x@ 11 jennynguyen  staff    352 Jan 17 14:49 icu</code></pre>
 </div>
 </div>
@@ -3130,30 +3130,29 @@ drwxr-xr-x@ 11 jennynguyen  staff    352 Jan 17 14:49 icu</code></pre>
 <div class="cell" data-layout-align="center">
 <div class="sourceCode cell-code" id="cb5"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ls</span> <span class="at">-l</span> ~/mimic/hosp/</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>total 35722752
--rw-rw-r--@ 1 jennynguyen  staff     15516088 Jan  5  2023 admissions.csv.gz
--rw-rw-r--@ 1 jennynguyen  staff       427468 Jan  5  2023 d_hcpcs.csv.gz
--rw-rw-r--@ 1 jennynguyen  staff       859438 Jan  5  2023 d_icd_diagnoses.csv.gz
--rw-rw-r--@ 1 jennynguyen  staff       578517 Jan  5  2023 d_icd_procedures.csv.gz
--rw-rw-r--@ 1 jennynguyen  staff        12900 Jan  5  2023 d_labitems.csv.gz
--rw-rw-r--@ 1 jennynguyen  staff     25070720 Jan  5  2023 diagnoses_icd.csv.gz
--rw-rw-r--@ 1 jennynguyen  staff      7426955 Jan  5  2023 drgcodes.csv.gz
--rw-rw-r--@ 1 jennynguyen  staff    508524623 Jan  5  2023 emar.csv.gz
--rw-rw-r--@ 1 jennynguyen  staff    471096030 Jan  5  2023 emar_detail.csv.gz
--rw-rw-r--@ 1 jennynguyen  staff      1767138 Jan  5  2023 hcpcsevents.csv.gz
--rw-r--r--@ 1 jennynguyen  staff  13730083993 Jan 18 11:12 labevents.csv
--rw-rw-r--@ 1 jennynguyen  staff   1939088924 Jan  5  2023 labevents.csv.gz
--rw-rw-r--@ 1 jennynguyen  staff     96698496 Jan  5  2023 microbiologyevents.csv.gz
--rw-rw-r--@ 1 jennynguyen  staff     36124944 Jan  5  2023 omr.csv.gz
--rw-rw-r--@ 1 jennynguyen  staff      2312631 Jan  5  2023 patients.csv.gz
--rw-rw-r--@ 1 jennynguyen  staff    398753125 Jan  5  2023 pharmacy.csv.gz
--rw-rw-r--@ 1 jennynguyen  staff    498505135 Jan  5  2023 poe.csv.gz
--rw-rw-r--@ 1 jennynguyen  staff     25477219 Jan  5  2023 poe_detail.csv.gz
--rw-rw-r--@ 1 jennynguyen  staff    458817415 Jan  5  2023 prescriptions.csv.gz
--rw-rw-r--@ 1 jennynguyen  staff      6027067 Jan  5  2023 procedures_icd.csv.gz
--rw-rw-r--@ 1 jennynguyen  staff       122507 Jan  5  2023 provider.csv.gz
--rw-rw-r--@ 1 jennynguyen  staff      6781247 Jan  5  2023 services.csv.gz
--rw-rw-r--@ 1 jennynguyen  staff     36158338 Jan  5  2023 transfers.csv.gz</code></pre>
+<pre><code>total 8885632
+-rw-rw-r--@ 1 jennynguyen  staff    15516088 Jan  5  2023 admissions.csv.gz
+-rw-rw-r--@ 1 jennynguyen  staff      427468 Jan  5  2023 d_hcpcs.csv.gz
+-rw-rw-r--@ 1 jennynguyen  staff      859438 Jan  5  2023 d_icd_diagnoses.csv.gz
+-rw-rw-r--@ 1 jennynguyen  staff      578517 Jan  5  2023 d_icd_procedures.csv.gz
+-rw-rw-r--@ 1 jennynguyen  staff       12900 Jan  5  2023 d_labitems.csv.gz
+-rw-rw-r--@ 1 jennynguyen  staff    25070720 Jan  5  2023 diagnoses_icd.csv.gz
+-rw-rw-r--@ 1 jennynguyen  staff     7426955 Jan  5  2023 drgcodes.csv.gz
+-rw-rw-r--@ 1 jennynguyen  staff   508524623 Jan  5  2023 emar.csv.gz
+-rw-rw-r--@ 1 jennynguyen  staff   471096030 Jan  5  2023 emar_detail.csv.gz
+-rw-rw-r--@ 1 jennynguyen  staff     1767138 Jan  5  2023 hcpcsevents.csv.gz
+-rw-rw-r--@ 1 jennynguyen  staff  1939088924 Jan  5  2023 labevents.csv.gz
+-rw-rw-r--@ 1 jennynguyen  staff    96698496 Jan  5  2023 microbiologyevents.csv.gz
+-rw-rw-r--@ 1 jennynguyen  staff    36124944 Jan  5  2023 omr.csv.gz
+-rw-rw-r--@ 1 jennynguyen  staff     2312631 Jan  5  2023 patients.csv.gz
+-rw-rw-r--@ 1 jennynguyen  staff   398753125 Jan  5  2023 pharmacy.csv.gz
+-rw-rw-r--@ 1 jennynguyen  staff   498505135 Jan  5  2023 poe.csv.gz
+-rw-rw-r--@ 1 jennynguyen  staff    25477219 Jan  5  2023 poe_detail.csv.gz
+-rw-rw-r--@ 1 jennynguyen  staff   458817415 Jan  5  2023 prescriptions.csv.gz
+-rw-rw-r--@ 1 jennynguyen  staff     6027067 Jan  5  2023 procedures_icd.csv.gz
+-rw-rw-r--@ 1 jennynguyen  staff      122507 Jan  5  2023 provider.csv.gz
+-rw-rw-r--@ 1 jennynguyen  staff     6781247 Jan  5  2023 services.csv.gz
+-rw-rw-r--@ 1 jennynguyen  staff    36158338 Jan  5  2023 transfers.csv.gz</code></pre>
 </div>
 </div>
 <p>Below are the contents in the <code>icu</code> folder.</p>
@@ -3334,13 +3333,13 @@ drwxr-xr-x@ 11 jennynguyen  staff    352 Jan 17 14:49 icu</code></pre>
 </ol>
 <p><strong>Answer:</strong></p>
 <div class="cell" data-layout-align="center">
-<div class="sourceCode cell-code" id="cb33"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a><span class="fu">gzip</span> <span class="at">-dk</span> <span class="op">&lt;</span> ~/mimic/hosp/labevents.csv.gz <span class="op">&gt;</span> ~/mimic/hosp/labevents.csv</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb33"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a><span class="fu">gzip</span> <span class="at">-dk</span> <span class="op">&lt;</span> ~/mimic/hosp/labevents.csv.gz <span class="op">&gt;</span> ./labevents.csv</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <div class="cell" data-layout-align="center">
-<div class="sourceCode cell-code" id="cb34"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ls</span> <span class="at">-l</span> ~/mimic/hosp/labevents.csv</span>
+<div class="sourceCode cell-code" id="cb34"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ls</span> <span class="at">-l</span> labevents.csv</span>
 <span id="cb34-2"><a href="#cb34-2" aria-hidden="true" tabindex="-1"></a><span class="fu">ls</span> <span class="at">-l</span> ~/mimic/hosp/labevents.csv.gz</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>-rw-r--r--@ 1 jennynguyen  staff  13730083993 Jan 18 11:12 /Users/jennynguyen/mimic/hosp/labevents.csv
+<pre><code>-rw-r--r--@ 1 jennynguyen  staff  13730083993 Jan 18 19:34 labevents.csv
 -rw-rw-r--@ 1 jennynguyen  staff  1939088924 Jan  5  2023 /Users/jennynguyen/mimic/hosp/labevents.csv.gz</code></pre>
 </div>
 </div>
@@ -3350,22 +3349,22 @@ drwxr-xr-x@ 11 jennynguyen  staff    352 Jan 17 14:49 icu</code></pre>
 <div class="cell-output cell-output-stdout">
 <pre><code> 118171368
 
-real    0m18.919s
-user    0m22.129s
-sys 0m2.445s</code></pre>
+real    0m18.083s
+user    0m22.190s
+sys 0m1.705s</code></pre>
 </div>
 </div>
 <div class="cell" data-layout-align="center">
-<div class="sourceCode cell-code" id="cb38"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb38-1"><a href="#cb38-1" aria-hidden="true" tabindex="-1"></a><span class="bu">time</span> wc <span class="at">-l</span> ~/mimic/hosp/labevents.csv</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb38"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb38-1"><a href="#cb38-1" aria-hidden="true" tabindex="-1"></a><span class="bu">time</span> wc <span class="at">-l</span> labevents.csv</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre><code> 118171368 /Users/jennynguyen/mimic/hosp/labevents.csv
+<pre><code> 118171368 labevents.csv
 
-real    0m6.048s
-user    0m4.231s
-sys 0m1.501s</code></pre>
+real    0m5.795s
+user    0m4.207s
+sys 0m1.326s</code></pre>
 </div>
 </div>
-<p>The run time of <code>zcat &lt; ~/mimic/hosp/labevents.csv.gz | wc -l</code> was 18.3 seconds, while the run time of <code>wc -l ~/mimic/hosp/labevents.csv</code> was 4.2 seconds. Although the file size of the compressed file was smaller, it did take longer to run the command. In contrast, the file size of the uncompressed file was large, but the run time for the command was much faster. Thus, there are trade-offs between having a small, compressed file that runs slower versus a large, uncompressed file that runs faster.</p>
+<p>The run time of <code>zcat &lt; ~/mimic/hosp/labevents.csv.gz | wc -l</code> was around 18 seconds, while the run time of <code>wc -l labevents.csv</code> was around 6 seconds. Although the file size of the compressed file was smaller, it did take longer to run the command. In contrast, the file size of the uncompressed file was large, but the run time for the command was much faster. Thus, there are trade-offs between having a small, compressed file that runs slower versus a large, uncompressed file that runs faster.</p>
 </section>
 <section id="q4.-whos-popular-in-pride-and-prejudice" class="level2">
 <h2 class="anchored" data-anchor-id="q4.-whos-popular-in-pride-and-prejudice">Q4. Who’s popular in Pride and Prejudice</h2>
@@ -3412,6 +3411,7 @@ sys 0m1.501s</code></pre>
 <section id="q5.-more-fun-with-linux" class="level2">
 <h2 class="anchored" data-anchor-id="q5.-more-fun-with-linux">Q5. More fun with Linux</h2>
 <p>Try following commands in Bash and interpret the results: <code>cal</code>, <code>cal 2024</code>, <code>cal 9 1752</code> (anything unusual?), <code>date</code>, <code>hostname</code>, <code>arch</code>, <code>uname -a</code>, <code>uptime</code>, <code>who am i</code>, <code>who</code>, <code>w</code>, <code>id</code>, <code>last | head</code>, <code>echo {con,pre}{sent,fer}{s,ed}</code>, <code>time sleep 5</code>, <code>history | tail</code>.</p>
+<p><strong>Answer:</strong></p>
 <div class="cell" data-layout-align="center">
 <div class="sourceCode cell-code" id="cb46"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb46-1"><a href="#cb46-1" aria-hidden="true" tabindex="-1"></a><span class="fu">cal</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
@@ -3485,7 +3485,7 @@ Su Mo Tu We Th Fr Sa
 <div class="cell" data-layout-align="center">
 <div class="sourceCode cell-code" id="cb52"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb52-1"><a href="#cb52-1" aria-hidden="true" tabindex="-1"></a><span class="fu">date</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>Thu Jan 18 14:07:04 PST 2024</code></pre>
+<pre><code>Thu Jan 18 20:07:48 PST 2024</code></pre>
 </div>
 </div>
 <p>The <code>date</code> command displays today’s date and time.</p>
@@ -3495,51 +3495,51 @@ Su Mo Tu We Th Fr Sa
 <pre><code>Jennys-MBP.lan</code></pre>
 </div>
 </div>
-<p>The <code>hostname</code> command displays the name of the host system, which is my Macbook Pro in this case.</p>
+<p>The <code>hostname</code> command displays the name of the host system.</p>
 <div class="cell" data-layout-align="center">
 <div class="sourceCode cell-code" id="cb56"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb56-1"><a href="#cb56-1" aria-hidden="true" tabindex="-1"></a><span class="fu">arch</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>arm64</code></pre>
 </div>
 </div>
-<p>The <code>arch</code> command displays the architecture type of my Mac, which has a 64-bit ARM architecture.</p>
+<p>The <code>arch</code> command displays the architecture type of the system.</p>
 <div class="cell" data-layout-align="center">
 <div class="sourceCode cell-code" id="cb58"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb58-1"><a href="#cb58-1" aria-hidden="true" tabindex="-1"></a><span class="fu">uname</span> <span class="at">-a</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>Darwin Jennys-MBP.lan 22.6.0 Darwin Kernel Version 22.6.0: Wed Jul  5 22:21:53 PDT 2023; root:xnu-8796.141.3~6/RELEASE_ARM64_T6020 arm64</code></pre>
 </div>
 </div>
-<p>The <code>uname -a</code> command displays information about my Mac system, and the <code>-a</code> option is used to display all of the available system characteristics. The information that is displayed includes the Kernel name, network node hostname, kernel release date, kernel version, machine hardware name, hardware platform, and operating system.</p>
+<p>The <code>uname -a</code> command displays information about the system, and the <code>-a</code> option is used to display all of the available system characteristics. The information that is displayed includes the Kernel name, network node hostname, kernel release date, kernel version, machine hardware name, hardware platform, and operating system.</p>
 <div class="cell" data-layout-align="center">
 <div class="sourceCode cell-code" id="cb60"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb60-1"><a href="#cb60-1" aria-hidden="true" tabindex="-1"></a><span class="fu">uptime</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>14:07  up 47 days, 23:49, 1 user, load averages: 2.90 1.81 1.73</code></pre>
+<pre><code>20:07  up 48 days,  5:49, 1 user, load averages: 2.28 1.99 1.82</code></pre>
 </div>
 </div>
-<p>The <code>uptime</code> command shows how long my Mac has been running. The current time is 12:01pm. My Mac has been up for 47 days and 21:43 hours. There is 1 user. The load average of my Mac is 1.70 over the last 1 minute, 1.54 over the last 5 minutes, and 1.47 over the last 15 minutes.</p>
+<p>The <code>uptime</code> command shows how long the system has been running. Specifically, it displays the current time, how long the system has been up for, how many users, and the load averages over the last 1, 5, and 15 minutes, respectively.</p>
 <div class="cell" data-layout-align="center">
 <div class="sourceCode cell-code" id="cb62"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb62-1"><a href="#cb62-1" aria-hidden="true" tabindex="-1"></a><span class="fu">who</span> am i</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>jennynguyen                   Jan 18 14:07 </code></pre>
+<pre><code>jennynguyen                   Jan 18 20:07 </code></pre>
 </div>
 </div>
-<p>The <code>who am i</code> command shows who is logged in on my Mac. It displays my log-in name and today’s date and current time.</p>
+<p>The <code>who am i</code> command shows who is logged in on the system. It displays the log-in name and today’s date and current time.</p>
 <div class="cell" data-layout-align="center">
 <div class="sourceCode cell-code" id="cb64"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb64-1"><a href="#cb64-1" aria-hidden="true" tabindex="-1"></a><span class="fu">who</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>jennynguyen      console      Dec  1 14:19 </code></pre>
 </div>
 </div>
-<p>The <code>who</code> command also shows who is logged in on my Mac, with slightly different information. It displays my log-in name. The terminal name is console. The time that I logged in was on December 1st at 2:19pm.</p>
+<p>The <code>who</code> command also shows who is logged in on the system, with slightly different information. It displays the log-in name, the terminal name, and the time of log-in.</p>
 <div class="cell" data-layout-align="center">
 <div class="sourceCode cell-code" id="cb66"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb66-1"><a href="#cb66-1" aria-hidden="true" tabindex="-1"></a><span class="fu">w</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>14:07  up 47 days, 23:49, 1 user, load averages: 2.90 1.81 1.73
+<pre><code>20:07  up 48 days,  5:49, 1 user, load averages: 2.28 1.99 1.82
 USER     TTY      FROM              LOGIN@  IDLE WHAT
-jennynguyen console  -                01Dec23 47days -</code></pre>
+jennynguyen console  -                01Dec23 48days -</code></pre>
 </div>
 </div>
-<p>The <code>w</code> command also shows who is logged in on my Mac and what the current activity is. It displays the current time, which is 1:25pm. My Mac has been up running for 47 days and 23:07 hours. There is 1 user logged into my Mac, and the load averages are 1.66 over the last 1 minute, 2.09 over the last 5 minutes, and 2.11 over the last 15 minutes. It also displays my log-in name. The terminal name is console. I logged in on December 1st, and my Mac has been idle for 47 days.</p>
+<p>The <code>w</code> command also shows who is logged in on the system and what the current activity is. On the first line, it displays the current time, how long the system has been up running for, how many users are logged in, and the load averages over the last 1, 5, and 15 minutes, respectively. It also displays the log-in name, the terminal name, the date of log-in, and how long the system has been idle for.</p>
 <div class="cell" data-layout-align="center">
 <div class="sourceCode cell-code" id="cb68"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb68-1"><a href="#cb68-1" aria-hidden="true" tabindex="-1"></a><span class="fu">id</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
@@ -3562,7 +3562,7 @@ jennynguyen  ttys000                   Tue Jan  9 16:10 - 16:10  (00:00)
 jennynguyen  ttys000                   Tue Jan  9 13:08 - 13:08  (00:00)</code></pre>
 </div>
 </div>
-<p>The <code>last</code> command shows a list of the last log-ins of users and terminals, starting from the most recent time. This command is piped into the <code>head</code> command, which displays only the first few lines of the list. The output displays my log-in name, the terminal name, the start and stop time of each session, and the duration of each session.</p>
+<p>The <code>last</code> command shows a list of the last log-ins of users and terminals, starting from the most recent time. This command is piped into the <code>head</code> command, which displays only the first few lines of the list. The output displays the log-in name, the terminal name, the start and stop time of each session, and the duration of each session.</p>
 <div class="cell" data-layout-align="center">
 <div class="sourceCode cell-code" id="cb72"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb72-1"><a href="#cb72-1" aria-hidden="true" tabindex="-1"></a><span class="bu">echo</span> <span class="dt">{con</span><span class="op">,</span><span class="dt">pre}{sent</span><span class="op">,</span><span class="dt">fer}{s</span><span class="op">,</span><span class="dt">ed}</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
@@ -3574,12 +3574,12 @@ jennynguyen  ttys000                   Tue Jan  9 13:08 - 13:08  (00:00)</code><
 <div class="sourceCode cell-code" id="cb74"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb74-1"><a href="#cb74-1" aria-hidden="true" tabindex="-1"></a><span class="bu">time</span> sleep 5</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>
-real    0m5.002s
+real    0m5.006s
 user    0m0.000s
 sys 0m0.001s</code></pre>
 </div>
 </div>
-<p>The <code>time sleep 5</code> command shows that it took 5.009 seconds to run the <code>sleep 5</code> command. The <code>sleep 5</code> command suspends execution for 5 seconds.</p>
+<p>The <code>time sleep 5</code> command shows that it took 5 seconds to run the <code>sleep 5</code> command. The <code>sleep 5</code> command suspends execution for 5 seconds.</p>
 <div class="cell" data-layout-align="center">
 <div class="sourceCode cell-code" id="cb76"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb76-1"><a href="#cb76-1" aria-hidden="true" tabindex="-1"></a><span class="bu">history</span> <span class="kw">|</span> <span class="fu">tail</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>

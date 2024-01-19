@@ -142,11 +142,11 @@ zcat < ~/mimic/hosp/admissions.csv.gz | awk -F, '{print $13}' | grep -v 'race' |
 **Answer:**
 ```{bash}
 #| eval: false
-gzip -dk < ~/mimic/hosp/labevents.csv.gz > ~/mimic/hosp/labevents.csv
+gzip -dk < ~/mimic/hosp/labevents.csv.gz > ./labevents.csv
 ```
 
 ```{bash}
-ls -l ~/mimic/hosp/labevents.csv
+ls -l labevents.csv
 ls -l ~/mimic/hosp/labevents.csv.gz
 ```
 The file size for the compressed file `labevents.csv.gz` is 1.9GB, while the file size for the uncompressed file `labevents.csv` is 13.7GB. The file size for the uncompressed file is much larger and takes up more space than the file size for the compressed file. 
@@ -155,9 +155,9 @@ The file size for the compressed file `labevents.csv.gz` is 1.9GB, while the fil
 time zcat < ~/mimic/hosp/labevents.csv.gz | wc -l
 ```
 ```{bash}
-time wc -l ~/mimic/hosp/labevents.csv
+time wc -l labevents.csv
 ```
-The run time of `zcat < ~/mimic/hosp/labevents.csv.gz | wc -l` was 18.3 seconds, while the run time of `wc -l ~/mimic/hosp/labevents.csv` was 4.2 seconds. Although the file size of the compressed file was smaller, it did take longer to run the command. In contrast, the file size of the uncompressed file was large, but the run time for the command was much faster. Thus, there are trade-offs between having a small, compressed file that runs slower versus a large, uncompressed file that runs faster. 
+The run time of `zcat < ~/mimic/hosp/labevents.csv.gz | wc -l` was around 18 seconds, while the run time of `wc -l labevents.csv` was around 6 seconds. Although the file size of the compressed file was smaller, it did take longer to run the command. In contrast, the file size of the uncompressed file was large, but the run time for the command was much faster. Thus, there are trade-offs between having a small, compressed file that runs slower versus a large, uncompressed file that runs faster. 
 
 ## Q4. Who's popular in Pride and Prejudice
 
@@ -206,6 +206,7 @@ Explain the output. Explain the meaning of `"$1"`, `"$2"`, and `"$3"` in this sh
 
 Try following commands in Bash and interpret the results: `cal`, `cal 2024`, `cal 9 1752` (anything unusual?), `date`, `hostname`, `arch`, `uname -a`, `uptime`, `who am i`, `who`, `w`, `id`, `last | head`, `echo {con,pre}{sent,fer}{s,ed}`, `time sleep 5`, `history | tail`.
 
+**Answer:**
 ```{bash}
 cal
 ```
@@ -229,37 +230,37 @@ The `date` command displays today's date and time.
 ```{bash}
 hostname
 ```
-The `hostname` command displays the name of the host system, which is my Macbook Pro in this case. 
+The `hostname` command displays the name of the host system. 
 
 ```{bash}
 arch
 ```
-The `arch` command displays the architecture type of my Mac, which has a 64-bit ARM architecture. 
+The `arch` command displays the architecture type of the system. 
 
 ```{bash}
 uname -a
 ```
-The `uname -a` command displays information about my Mac system, and the `-a` option is used to display all of the available system characteristics. The information that is displayed includes the Kernel name, network node hostname, kernel release date, kernel version, machine hardware name, hardware platform, and operating system. 
+The `uname -a` command displays information about the system, and the `-a` option is used to display all of the available system characteristics. The information that is displayed includes the Kernel name, network node hostname, kernel release date, kernel version, machine hardware name, hardware platform, and operating system. 
 
 ```{bash}
 uptime
 ```
-The `uptime` command shows how long my Mac has been running. The current time is 12:01pm. My Mac has been up for 47 days and 21:43 hours. There is 1 user. The load average of my Mac is 1.70 over the last 1 minute, 1.54 over the last 5 minutes, and 1.47 over the last 15 minutes. 
+The `uptime` command shows how long the system has been running. Specifically, it displays the current time, how long the system has been up for, how many users, and the load averages over the last 1, 5, and 15 minutes, respectively. 
 
 ```{bash}
 who am i
 ```
-The `who am i` command shows who is logged in on my Mac. It displays my log-in name and today's date and current time. 
+The `who am i` command shows who is logged in on the system. It displays the log-in name and today's date and current time. 
 
 ```{bash}
 who
 ```
-The `who` command also shows who is logged in on my Mac, with slightly different information. It displays my log-in name. The terminal name is console. The time that I logged in was on December 1st at 2:19pm. 
+The `who` command also shows who is logged in on the system, with slightly different information. It displays the log-in name, the terminal name, and the time of log-in. 
 
 ```{bash}
 w
 ```
-The `w` command also shows who is logged in on my Mac and what the current activity is. It displays the current time, which is 1:25pm. My Mac has been up running for 47 days and 23:07 hours. There is 1 user logged into my Mac, and the load averages are 1.66 over the last 1 minute, 2.09 over the last 5 minutes, and 2.11 over the last 15 minutes. It also displays my log-in name. The terminal name is console. I logged in on December 1st, and my Mac has been idle for 47 days. 
+The `w` command also shows who is logged in on the system and what the current activity is. On the first line, it displays the current time, how long the system has been up running for, how many users are logged in, and the load averages over the last 1, 5, and 15 minutes, respectively. It also displays the log-in name, the terminal name, the date of log-in, and how long the system has been idle for. 
 
 ```{bash}
 id
@@ -269,7 +270,7 @@ The `id` command shows the user and group names, as well as the IDs that are ass
 ```{bash}
 last | head
 ```
-The `last` command shows a list of the last log-ins of users and terminals, starting from the most recent time. This command is piped into the `head` command, which displays only the first few lines of the list. The output displays my log-in name, the terminal name, the start and stop time of each session, and the duration of each session. 
+The `last` command shows a list of the last log-ins of users and terminals, starting from the most recent time. This command is piped into the `head` command, which displays only the first few lines of the list. The output displays the log-in name, the terminal name, the start and stop time of each session, and the duration of each session. 
 
 ```{bash}
 echo {con,pre}{sent,fer}{s,ed}
@@ -279,7 +280,7 @@ The `echo {con,pre}{sent,fer}{s,ed}` command prints all of the words that start 
 ```{bash}
 time sleep 5
 ```
-The `time sleep 5` command shows that it took 5.009 seconds to run the `sleep 5` command. The `sleep 5` command suspends execution for 5 seconds. 
+The `time sleep 5` command shows that it took 5 seconds to run the `sleep 5` command. The `sleep 5` command suspends execution for 5 seconds. 
 
 ```{bash}
 history | tail
