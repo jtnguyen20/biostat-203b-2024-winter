@@ -83,7 +83,7 @@ done
 ```
 Display the number of lines in each data file using a similar loop. (Hint: combine linux commands `zcat <` and `wc -l`.)
 
-**Answer:** Below are the number of lines in each data file. 
+**Answer:** Below are the number of lines in each data file, including the header.  
 ```{bash}
 zcat < ~/mimic/hosp/admissions.csv.gz | wc -l
 ```
@@ -105,17 +105,17 @@ zcat < ~/mimic/hosp/admissions.csv.gz | head -5
 ```{bash}
 zcat < ~/mimic/hosp/admissions.csv.gz | awk 'END {print NR}'
 ```
-There are 431232 rows in this data file. 
+There are 431232 rows in the `admissions.csv.gz` file, including the header. 
 
 ```{bash}
 zcat < ~/mimic/hosp/admissions.csv.gz | awk -F, '{print $1}' | sort | uniq | wc -l
 ```
-There are 180734 unique patients (identified by `subject_id`) in this data file. 
+There are 180733 unique patients (subtracted 1 to exclude counting the header) in the `admissions.csv.gz` file. 
 
 ```{bash}
 zcat < ~/mimic/hosp/patients.csv.gz | awk -F, '{print $1}' | sort | uniq | wc -l
 ```
-The number of patients listed in the `patients.csv.gz` file is 299713. Thus, the number of unique patients in the `admissions.csv.gz` file does not match the number of patients in the `patients.csv.gz` file. 
+The number of patients listed in the `patients.csv.gz` file is 299712 (subtracted 1 to exclude counting the header). Thus, the number of unique patients in the `admissions.csv.gz` file does not match the number of patients in the `patients.csv.gz` file. 
 
 6. What are the possible values taken by each of the variable `admission_type`, `admission_location`, `insurance`, and `race`? Also report the count for each unique value of these variables. (Hint: combine Linux commands `zcat`, `head`/`tail`, `awk`, `uniq -c`, `wc`, and so on; skip the header line.)
 
@@ -176,7 +176,7 @@ Explain what `wget -nc` does. Do **not** put this text file `pg42671.txt` in Git
 for char in Elizabeth Jane Lydia Darcy
 do
   echo $char:
-  grep $char ./pg42671.txt | wc -l
+  grep -o $char ./pg42671.txt | wc -l
 done
 ```
 
@@ -320,6 +320,7 @@ The point of this exercise is (1) to get the book for free and (2) to see an exa
 
 For grading purpose, include a screenshot of Section 4.1.5 of the book here.
 
+**Answer:**
 <p align="center">
 <img src="./biostat203b_hw1_q6.png" width="100%"/>
 </p>
