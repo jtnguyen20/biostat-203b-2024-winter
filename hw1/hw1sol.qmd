@@ -167,13 +167,16 @@ The run time of `zcat < ~/mimic/hosp/labevents.csv.gz | wc -l` was around 18 sec
 wget -nc http://www.gutenberg.org/cache/epub/42671/pg42671.txt
 ```
 Explain what `wget -nc` does. Do **not** put this text file `pg42671.txt` in Git. Complete the following loop to tabulate the number of times each of the four characters is mentioned using Linux commands.
+
+**Answer:** The `wget -nc` command, when run in terminal, allows the user to download files from the Internet, non-interactively. The `-nc` option prevents the user from overwriting files when a shell redirect is used. 
+
 ```{bash}
-#| eval: false
-wget -nc http://www.gutenberg.org/cache/epub/42671/pg42671.txt
+#| eval: true 
+# wget -nc http://www.gutenberg.org/cache/epub/42671/pg42671.txt
 for char in Elizabeth Jane Lydia Darcy
 do
   echo $char:
-  # some bash commands here
+  grep $char ./pg42671.txt | wc -l
 done
 ```
 
@@ -188,6 +191,8 @@ and
 echo 'hello, world' >> test2.txt
 ```
 
+**Answer:** Using `>` will direct the output from the command into the file. Using `>>` will append the output from the command to the file. 
+
 3. Using your favorite text editor (e.g., `vi`), type the following and save the file as `middle.sh`:
 ```{bash eval=FALSE}
 #!/bin/sh
@@ -196,11 +201,18 @@ echo 'hello, world' >> test2.txt
 head -n "$2" "$1" | tail -n "$3"
 ```
 Using `chmod` to make the file executable by the owner, and run
+
 ```{bash}
-#| eval: false
+chmod u+x middle.sh
+```
+
+```{bash}
+#| eval: true
 ./middle.sh pg42671.txt 20 5
 ```
 Explain the output. Explain the meaning of `"$1"`, `"$2"`, and `"$3"` in this shell script. Why do we need the first line of the shell script?
+
+**Answer:** The output includes lines from the middle of the text file `pg42671.txt`. `"$1"`, `"$2"`, and `"$3"` are positional parameters that denote the order that the arguments are passed to the shell script, with `"$1"` representing the first argument, `"$2"` representing the second argument, and so on. We need the first line of the shell script to specify what command is to be run and what positions the arguments should be placed in for the command to run as desired. In this first line, `head` will print out the first few lines of a file, but `-n "$2"` specifies that we want `head -20` to print out the first 20 lines of the file, since `20` is the second argument. `pg42671.txt` is the first argument, so `$1` refers to `pg42671.txt` as the file that we want to select lines from. This output is then piped into `tail -5` since `5` is the third argument, which prints out the last 5 lines of the first 20 lines of the file. 
 
 ## Q5. More fun with Linux
 
@@ -285,7 +297,7 @@ The `time sleep 5` command shows that it took 5 seconds to run the `sleep 5` com
 ```{bash}
 history | tail
 ```
-The `history | tail` command, when run in terminal, shows a list of commands that were previously executed, with the `tail` command displaying only the last few lines of the list. 
+The `history | tail` command, when run in terminal, shows a list of commands that were previously executed, with the `tail` command displaying only the last few lines of the list, which corresponds to the most recent commands executed. 
 
    27  man uname -a | head -30
    28  man uptime | head -30
@@ -307,3 +319,7 @@ The `history | tail` command, when run in terminal, shows a list of commands tha
 The point of this exercise is (1) to get the book for free and (2) to see an example how a complicated project such as a book can be organized in a reproducible way.
 
 For grading purpose, include a screenshot of Section 4.1.5 of the book here.
+
+<p align="center">
+<img src="./biostat203b_hw1_q6.png" width="100%"/>
+</p>
