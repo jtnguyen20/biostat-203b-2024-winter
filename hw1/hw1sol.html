@@ -3340,7 +3340,7 @@ drwxr-xr-x@ 11 jennynguyen  staff    352 Jan 17 14:49 icu</code></pre>
 <div class="sourceCode cell-code" id="cb34"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ls</span> <span class="at">-l</span> labevents.csv</span>
 <span id="cb34-2"><a href="#cb34-2" aria-hidden="true" tabindex="-1"></a><span class="fu">ls</span> <span class="at">-l</span> ~/mimic/hosp/labevents.csv.gz</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>-rw-r--r--@ 1 jennynguyen  staff  13730083993 Jan 24 19:05 labevents.csv
+<pre><code>-rw-r--r--@ 1 jennynguyen  staff  13730083993 Jan 24 19:22 labevents.csv
 -rw-rw-r--@ 1 jennynguyen  staff  1939088924 Jan  5  2023 /Users/jennynguyen/mimic/hosp/labevents.csv.gz</code></pre>
 </div>
 </div>
@@ -3350,9 +3350,9 @@ drwxr-xr-x@ 11 jennynguyen  staff    352 Jan 17 14:49 icu</code></pre>
 <div class="cell-output cell-output-stdout">
 <pre><code> 118171368
 
-real    0m18.231s
-user    0m22.224s
-sys 0m1.831s</code></pre>
+real    0m18.141s
+user    0m22.243s
+sys 0m1.708s</code></pre>
 </div>
 </div>
 <div class="cell" data-layout-align="center">
@@ -3360,9 +3360,9 @@ sys 0m1.831s</code></pre>
 <div class="cell-output cell-output-stdout">
 <pre><code> 118171368 labevents.csv
 
-real    0m5.739s
+real    0m5.718s
 user    0m4.225s
-sys 0m1.301s</code></pre>
+sys 0m1.289s</code></pre>
 </div>
 </div>
 <p>The run time of <code>zcat &lt; ~/mimic/hosp/labevents.csv.gz | wc -l</code> was around 18 seconds, while the run time of <code>wc -l labevents.csv</code> was around 6 seconds. Although the file size of the compressed file was smaller, it did take longer to run the command. In contrast, the file size of the uncompressed file was large, but the run time for the command was much faster. Thus, there are trade-offs between having a small, compressed file where commands run slower versus a large, uncompressed file where commands run faster.</p>
@@ -3378,14 +3378,15 @@ sys 0m1.301s</code></pre>
 <p>Explain what <code>wget -nc</code> does. Do <strong>not</strong> put this text file <code>pg42671.txt</code> in Git. Complete the following loop to tabulate the number of times each of the four characters is mentioned using Linux commands.</p>
 <p><strong>Answer:</strong> The <code>wget -nc</code> command, when run in terminal, allows the user to download files from the Internet, non-interactively. The <code>-nc</code> option prevents the user from overwriting files when a shell redirect is used.</p>
 <div class="cell" data-layout-align="center">
-<div class="sourceCode cell-code" id="cb41"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb41-1"><a href="#cb41-1" aria-hidden="true" tabindex="-1"></a><span class="co"># wget -nc http://www.gutenberg.org/cache/epub/42671/pg42671.txt</span></span>
+<div class="sourceCode cell-code" id="cb41"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb41-1"><a href="#cb41-1" aria-hidden="true" tabindex="-1"></a><span class="fu">wget</span> <span class="at">-nc</span> http://www.gutenberg.org/cache/epub/42671/pg42671.txt</span>
 <span id="cb41-2"><a href="#cb41-2" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> char <span class="kw">in</span> Elizabeth Jane Lydia Darcy</span>
 <span id="cb41-3"><a href="#cb41-3" aria-hidden="true" tabindex="-1"></a><span class="cf">do</span></span>
 <span id="cb41-4"><a href="#cb41-4" aria-hidden="true" tabindex="-1"></a>  <span class="bu">echo</span> <span class="va">$char</span>:</span>
 <span id="cb41-5"><a href="#cb41-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">grep</span> <span class="at">-o</span> <span class="va">$char</span> ./pg42671.txt <span class="kw">|</span> <span class="fu">wc</span> <span class="at">-l</span></span>
 <span id="cb41-6"><a href="#cb41-6" aria-hidden="true" tabindex="-1"></a><span class="cf">done</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>Elizabeth:
+<pre><code>bash: wget: command not found
+Elizabeth:
      634
 Jane:
      293
@@ -3509,7 +3510,7 @@ Su Mo Tu We Th Fr Sa
 <div class="cell" data-layout-align="center">
 <div class="sourceCode cell-code" id="cb55"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb55-1"><a href="#cb55-1" aria-hidden="true" tabindex="-1"></a><span class="fu">date</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>Wed Jan 24 19:05:49 PST 2024</code></pre>
+<pre><code>Wed Jan 24 19:22:41 PST 2024</code></pre>
 </div>
 </div>
 <p>The <code>date</code> command displays today’s date and time.</p>
@@ -3537,14 +3538,14 @@ Su Mo Tu We Th Fr Sa
 <div class="cell" data-layout-align="center">
 <div class="sourceCode cell-code" id="cb63"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb63-1"><a href="#cb63-1" aria-hidden="true" tabindex="-1"></a><span class="fu">uptime</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>19:05  up 4 days, 17:47, 1 user, load averages: 1.75 1.90 1.98</code></pre>
+<pre><code>19:22  up 4 days, 18:04, 1 user, load averages: 2.15 1.95 1.88</code></pre>
 </div>
 </div>
 <p>The <code>uptime</code> command shows how long the system has been running. Specifically, it displays the current time, how long the system has been up for, how many users, and the load averages over the last 1, 5, and 15 minutes, respectively.</p>
 <div class="cell" data-layout-align="center">
 <div class="sourceCode cell-code" id="cb65"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb65-1"><a href="#cb65-1" aria-hidden="true" tabindex="-1"></a><span class="fu">who</span> am i</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>jennynguyen                   Jan 24 19:05 </code></pre>
+<pre><code>jennynguyen                   Jan 24 19:22 </code></pre>
 </div>
 </div>
 <p>The <code>who am i</code> command shows who is logged in on the system. It displays the log-in name and today’s date and current time.</p>
@@ -3558,7 +3559,7 @@ Su Mo Tu We Th Fr Sa
 <div class="cell" data-layout-align="center">
 <div class="sourceCode cell-code" id="cb69"><pre class="sourceCode bash code-with-copy"><code class="sourceCode bash"><span id="cb69-1"><a href="#cb69-1" aria-hidden="true" tabindex="-1"></a><span class="fu">w</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>19:05  up 4 days, 17:47, 1 user, load averages: 1.75 1.90 1.98
+<pre><code>19:22  up 4 days, 18:04, 1 user, load averages: 2.15 1.95 1.88
 USER     TTY      FROM              LOGIN@  IDLE WHAT
 jennynguyen console  -                Sat08   4days -</code></pre>
 </div>
