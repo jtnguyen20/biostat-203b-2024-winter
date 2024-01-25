@@ -81,6 +81,8 @@ do
   ls -l $datafile
 done
 ```
+**Answer:** The output of the bash script above shows a list of gz files in the `hosp` folder that contain the characters "a", "l", or "pa" at the beginning, in long format. This includes the `admissions.csv.gz`, `labevents.csv.gz`, and `patients.csv.gz` files. 
+
 Display the number of lines in each data file using a similar loop. (Hint: combine linux commands `zcat <` and `wc -l`.)
 
 **Answer:** Below are the number of lines in each data file, including the header.  
@@ -141,7 +143,7 @@ zcat < ~/mimic/hosp/admissions.csv.gz | awk -F, '{print $13}' | grep -v 'race' |
 
 **Answer:**
 ```{bash}
-#| eval: false
+#| eval: true
 gzip -dk < ~/mimic/hosp/labevents.csv.gz > ./labevents.csv
 ```
 
@@ -157,7 +159,7 @@ time zcat < ~/mimic/hosp/labevents.csv.gz | wc -l
 ```{bash}
 time wc -l labevents.csv
 ```
-The run time of `zcat < ~/mimic/hosp/labevents.csv.gz | wc -l` was around 18 seconds, while the run time of `wc -l labevents.csv` was around 6 seconds. Although the file size of the compressed file was smaller, it did take longer to run the command. In contrast, the file size of the uncompressed file was large, but the run time for the command was much faster. Thus, there are trade-offs between having a small, compressed file that runs slower versus a large, uncompressed file that runs faster. 
+The run time of `zcat < ~/mimic/hosp/labevents.csv.gz | wc -l` was around 18 seconds, while the run time of `wc -l labevents.csv` was around 6 seconds. Although the file size of the compressed file was smaller, it did take longer to run the command. In contrast, the file size of the uncompressed file was large, but the run time for the command was much faster. Thus, there are trade-offs between having a small, compressed file where commands run slower versus a large, uncompressed file where commands run faster. 
 
 ## Q4. Who's popular in Pride and Prejudice
 
@@ -191,7 +193,7 @@ and
 echo 'hello, world' >> test2.txt
 ```
 
-**Answer:** Using `>` will direct the output from the command into the file. Using `>>` will append the output from the command to the file. 
+**Answer:** Using `>` will direct the output from the command into the file. Using `>>` will append the output from the command to the file. In this case though, since there was nothing in the `test2.txt` file to begin with, the contents of the two files look the same. 
 
 3. Using your favorite text editor (e.g., `vi`), type the following and save the file as `middle.sh`:
 ```{bash eval=FALSE}
@@ -252,7 +254,7 @@ The `arch` command displays the architecture type of the system.
 ```{bash}
 uname -a
 ```
-The `uname -a` command displays information about the system, and the `-a` option is used to display all of the available system characteristics. The information that is displayed includes the Kernel name, network node hostname, kernel release date, kernel version, machine hardware name, hardware platform, and operating system. 
+The `uname -a` command displays information about the system, and the `-a` option is used to display all of the available system characteristics. The information that is displayed includes the kernel name, the hostname, the kernel release date, the kernel version, the machine's hardware name, the hardware platform, and the operating system name. 
 
 ```{bash}
 uptime
@@ -298,17 +300,6 @@ The `time sleep 5` command shows that it took 5 seconds to run the `sleep 5` com
 history | tail
 ```
 The `history | tail` command, when run in terminal, shows a list of commands that were previously executed, with the `tail` command displaying only the last few lines of the list, which corresponds to the most recent commands executed. 
-
-   27  man uname -a | head -30
-   28  man uptime | head -30
-   29  man who am i 
-   30  man who | head -30
-   31  man w | head -30
-   32  man id | head -30
-   33  man last | head -30
-   34  man sleep | head -30
-   35  man history | head -30
-   36  history | tail
 
 ## Q6. Book
 
