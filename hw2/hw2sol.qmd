@@ -177,7 +177,7 @@ zcat < labevents_filtered.csv.gz | head -10
 ```{bash}
 zcat < labevents_filtered.csv.gz | wc -l
 ```
-There are 24855910 lines in this new file. 
+There are 24855910 lines in this new file, including the header. 
 
 ```{r}
 read_csv("labevents_filtered.csv.gz")
@@ -203,14 +203,26 @@ Then use [`arrow::open_dataset`](https://arrow.apache.org/docs/r/reference/open_
 
 **Answer:**
 ```{r}
-#| eval: false
-open_dataset("labevents.csv", format="csv") |>
+arrow::open_dataset("labevents.csv", format="csv") |> 
   select(subject_id, itemid, charttime, valuenum) |>
   filter(itemid == 50912 | itemid == 50971 | itemid == 50983 | itemid == 50902 | itemid == 50882 | itemid == 51221 | itemid == 51301 | itemid == 50931) |>
-  head()
+  as_tibble() |>
+  system.time()
+```
+It took around 30 seconds for the ingest+select+filter process to run. 
+
+```{r}
+labevents_filtered <- arrow::open_dataset("labevents.csv", format="csv") |> 
+  select(subject_id, itemid, charttime, valuenum) |>
+  filter(itemid == 50912 | itemid == 50971 | itemid == 50983 | itemid == 50902 | itemid == 50882 | itemid == 51221 | itemid == 51301 | itemid == 50931) |>
+  as_tibble()
+summarize(labevents_filtered, rows=n())
+head(labevents_filtered, n=10)
 ```
 
 Write a few sentences to explain what is Apache Arrow. Imagine you want to explain it to a layman in an elevator. 
+
+**Answer:** Apache Arrow is a platform for software development that is designed to more efficiently process and move large data sets from one system to another. A key feature of Apache Arrow is that the data is stored in columns, which can make reading in big data more efficient and less memory intensive. Since Apache Arrow has an standardized memory format, this allows big data to be transferred across systems more easily. Lastly, Apache Arrow is compatible with many programming languages to use. 
 
 ### Q2.5 Compress `labevents.csv` to Parquet format and ingest/select/filter
 
@@ -220,7 +232,39 @@ Write a few sentences to explain what is Apache Arrow. Imagine you want to expla
 
 Re-write the csv file `labevents.csv` in the binary Parquet format (Hint: [`arrow::write_dataset`](https://arrow.apache.org/docs/r/reference/write_dataset.html).) How large is the Parquet file(s)? How long does the ingest+select+filter process of the Parquet file(s) take? Display the number of rows and the first 10 rows of the result tibble and make sure they match those in Q2.3. (Hint: use `dplyr` verbs for selecting columns and filtering rows.)
 
+**Answer:** 
+```{r}
+#| eval: false
+labevents <- arrow::open_dataset("labevents.csv", format="csv")
+arrow::write_dataset(labevents, "labevents_parquet", format="parquet")
+```
+
+```{r}
+file.size("labevents_parquet/part-0.parquet")
+```
+The Parquet file is 2.07 GB. 
+
+```{r}
+arrow::open_dataset("labevents_parquet/part-0.parquet", format="parquet") |> 
+  select(subject_id, itemid, charttime, valuenum) |>
+  filter(itemid == 50912 | itemid == 50971 | itemid == 50983 | itemid == 50902 | itemid == 50882 | itemid == 51221 | itemid == 51301 | itemid == 50931) |>
+  as_tibble() |>
+  system.time()
+```
+It took around 10 seconds for the ingest+select+filter process of the Parquet file to run. 
+
+```{r}
+labevents_parquet <- arrow::open_dataset("labevents_parquet/part-0.parquet", format="parquet") |> 
+  select(subject_id, itemid, charttime, valuenum) |>
+  filter(itemid == 50912 | itemid == 50971 | itemid == 50983 | itemid == 50902 | itemid == 50882 | itemid == 51221 | itemid == 51301 | itemid == 50931) |>
+  as_tibble()
+summarize(labevents_parquet, rows=n())
+head(labevents_parquet, n=10)
+```
+
 Write a few sentences to explain what is the Parquet format. Imagine you want to explain it to a layman in an elevator.
+
+**Answer:** The Parquet format is a file format that stores data in columns instead of rows, which is useful as it takes up less storage space and allows for more efficient data processing. Parquet is also great at compressing files, which again, supports more efficient data storage and faster performance when processing the data. These features of Parquet make it helpful to use when working with big data. 
 
 ### Q2.6 DuckDB
 
