@@ -36,6 +36,7 @@ library(memuse)
 library(pryr)
 library(R.utils)
 library(tidyverse)
+library(duckdb)
 ```
 
 Display memory information of your computer
@@ -139,7 +140,7 @@ Try to ingest `labevents.csv.gz` using `read_csv`. What happens? If it takes mor
 #| eval: false
 read_csv("~/mimic/hosp/labevents.csv.gz")
 ```
-It took over 5 minutes for `read_csv` to ingest `labevents.csv.gz`. After I aborted the program, the command stopped running, and `labevents.csv.gz` could not be ingested. 
+It took over 5 minutes for `read_csv` to ingest `labevents.csv.gz`. After I aborted the program, the command stopped running, and `labevents.csv.gz` could not be ingested. The reason why it was taking so long to ingest `labevents.csv.gz` is because the data is larger than the memory, which my computer could not handle. 
 
 ### Q2.2 Ingest selected columns of `labevents.csv.gz` by `read_csv`
 
@@ -183,7 +184,7 @@ There are 24855910 lines in this new file, including the header.
 read_csv("labevents_filtered.csv.gz")
 read_csv("labevents_filtered.csv.gz") |> system.time()
 ```
-It took around 17 seconds for `read_csv` to ingest `labevents_filtered.csv.gz`. 
+It took around 12 seconds for `read_csv` to ingest `labevents_filtered.csv.gz`. 
 
 ### Q2.4 Ingest `labevents.csv` by Apache Arrow
 
@@ -203,7 +204,7 @@ Then use [`arrow::open_dataset`](https://arrow.apache.org/docs/r/reference/open_
 
 **Answer:**
 ```{r}
-arrow::open_dataset("labevents.csv", format="csv") |> 
+arrow::open_dataset("labevents.csv", format = "csv") |> 
   select(subject_id, itemid, charttime, valuenum) |>
   filter(itemid == 50912 | itemid == 50971 | itemid == 50983 | itemid == 50902 | itemid == 50882 | itemid == 51221 | itemid == 51301 | itemid == 50931) |>
   as_tibble() |>
@@ -212,12 +213,12 @@ arrow::open_dataset("labevents.csv", format="csv") |>
 It took around 30 seconds for the ingest+select+filter process to run. 
 
 ```{r}
-labevents_filtered <- arrow::open_dataset("labevents.csv", format="csv") |> 
+labevents_filtered <- arrow::open_dataset("labevents.csv", format = "csv") |> 
   select(subject_id, itemid, charttime, valuenum) |>
   filter(itemid == 50912 | itemid == 50971 | itemid == 50983 | itemid == 50902 | itemid == 50882 | itemid == 51221 | itemid == 51301 | itemid == 50931) |>
   as_tibble()
-summarize(labevents_filtered, rows=n())
-head(labevents_filtered, n=10)
+summarize(labevents_filtered, rows = n())
+head(labevents_filtered, n = 10)
 ```
 
 Write a few sentences to explain what is Apache Arrow. Imagine you want to explain it to a layman in an elevator. 
@@ -235,8 +236,8 @@ Re-write the csv file `labevents.csv` in the binary Parquet format (Hint: [`arro
 **Answer:** 
 ```{r}
 #| eval: false
-labevents <- arrow::open_dataset("labevents.csv", format="csv")
-arrow::write_dataset(labevents, "labevents_parquet", format="parquet")
+labevents <- arrow::open_dataset("labevents.csv", format = "csv")
+arrow::write_dataset(labevents, "labevents_parquet", format = "parquet")
 ```
 
 ```{r}
@@ -245,26 +246,26 @@ file.size("labevents_parquet/part-0.parquet")
 The Parquet file is 2.07 GB. 
 
 ```{r}
-arrow::open_dataset("labevents_parquet/part-0.parquet", format="parquet") |> 
+arrow::open_dataset("labevents_parquet/part-0.parquet", format = "parquet") |> 
   select(subject_id, itemid, charttime, valuenum) |>
   filter(itemid == 50912 | itemid == 50971 | itemid == 50983 | itemid == 50902 | itemid == 50882 | itemid == 51221 | itemid == 51301 | itemid == 50931) |>
   as_tibble() |>
   system.time()
 ```
-It took around 10 seconds for the ingest+select+filter process of the Parquet file to run. 
+It took around 9 seconds for the ingest+select+filter process of the Parquet file to run. 
 
 ```{r}
-labevents_parquet <- arrow::open_dataset("labevents_parquet/part-0.parquet", format="parquet") |> 
+labevents_parquet <- arrow::open_dataset("labevents_parquet/part-0.parquet", format = "parquet") |> 
   select(subject_id, itemid, charttime, valuenum) |>
   filter(itemid == 50912 | itemid == 50971 | itemid == 50983 | itemid == 50902 | itemid == 50882 | itemid == 51221 | itemid == 51301 | itemid == 50931) |>
   as_tibble()
-summarize(labevents_parquet, rows=n())
-head(labevents_parquet, n=10)
+summarize(labevents_parquet, rows = n())
+head(labevents_parquet, n = 10)
 ```
 
 Write a few sentences to explain what is the Parquet format. Imagine you want to explain it to a layman in an elevator.
 
-**Answer:** The Parquet format is a file format that stores data in columns instead of rows, which is useful as it takes up less storage space and allows for more efficient data processing. Parquet is also great at compressing files, which again, supports more efficient data storage and faster performance when processing the data. These features of Parquet make it helpful to use when working with big data. 
+**Answer:** The Parquet format is a file format that stores data in columns instead of rows, which is useful as it takes up less storage space and allows for more efficient data query (requesting for data from a datatable). Parquet is also great at compressing files, which again, supports more efficient data storage and faster performance when querying the data. These features of Parquet make it helpful to use when working with big data. 
 
 ### Q2.6 DuckDB
 
@@ -274,7 +275,30 @@ Write a few sentences to explain what is the Parquet format. Imagine you want to
 
 Ingest the Parquet file, convert it to a DuckDB table by [`arrow::to_duckdb`](https://arrow.apache.org/docs/r/reference/to_duckdb.html), select columns, and filter rows as in Q2.5. How long does the ingest+convert+select+filter process take? Display the number of rows and the first 10 rows of the result tibble and make sure they match those in Q2.3. (Hint: use `dplyr` verbs for selecting columns and filtering rows.)
 
+**Answer:**
+```{r}
+arrow::open_dataset("labevents_parquet/part-0.parquet", format = "parquet") |>
+  arrow::to_duckdb() |>
+  select(subject_id, itemid, charttime, valuenum) |>
+  filter(itemid == 50912 | itemid == 50971 | itemid == 50983 | itemid == 50902 | itemid == 50882 | itemid == 51221 | itemid == 51301 | itemid == 50931) |>
+  as_tibble() |>
+  system.time()
+```
+It took around 9 seconds for the ingest+select+filter process of the Parquet file converted to a DuckDB table to run. 
+
+```{r}
+labevents_duckdb <- arrow::open_dataset("labevents_parquet/part-0.parquet", format = "parquet") |>
+  arrow::to_duckdb() |>
+  select(subject_id, itemid, charttime, valuenum) |>
+  filter(itemid == 50912 | itemid == 50971 | itemid == 50983 | itemid == 50902 | itemid == 50882 | itemid == 51221 | itemid == 51301 | itemid == 50931) |>
+  as_tibble()
+summarize(labevents_duckdb, rows = n())
+head(labevents_duckdb, n = 10)
+```
+
 Write a few sentences to explain what is DuckDB. Imagine you want to explain it to a layman in an elevator.
+
+**Answer:** DuckDB is a database management system that is designed to help users analyze large data sets more quickly and efficiently. It also stores data in columns instead of rows, resulting in faster and improved data query. It stores data in the main memory of the computer, rather than in disk storage, which allows for the data be to accessed more quickly. 
 
 ## Q3. Ingest and filter `chartevents.csv.gz`
 
@@ -289,3 +313,25 @@ zcat < ~/mimic/icu/d_items.csv.gz | head -10
 In later exercises, we are interested in the vitals for ICU patients: heart rate (220045), mean non-invasive blood pressure (220181), systolic non-invasive blood pressure (220179), body temperature in Fahrenheit (223761), and respiratory rate (220210). Retrieve a subset of `chartevents.csv.gz` only containing these items, using the favorite method you learnt in Q2. 
 
 Document the steps and show code. Display the number of rows and the first 10 rows of the result tibble.
+
+**Answer:** First, I decompressed `chartevents.csv.gz` to `chartevents.csv` and placed it in my working directory. 
+```{bash}
+#| eval: false
+gzip -dk < ~/mimic/icu/chartevents.csv.gz > ./chartevents.csv
+```
+
+Then, I used `arrow::open_dataset` to ingest `chartevents.csv` and `arrow::write_dataset` to rewrite the csv file into a Parquet file format. 
+```{r}
+#| eval: false
+chartevents <- arrow::open_dataset("chartevents.csv", format = "csv")
+arrow::write_dataset(chartevents, "chartevents_parquet", format = "parquet")
+```
+
+Lastly, I used `arrow::open_dataset` to ingest the Parquet file, filtered the data set based on the vitals indicated above, and turned the output into a tibble. I displayed the number of rows and the first 10 rows of the tibble. 
+```{r}
+chartevents_parquet <- arrow::open_dataset("chartevents_parquet/part-0.parquet", format = "parquet") |> 
+  filter(itemid == 220045 | itemid == 220181 | itemid == 220179 | itemid == 223761 | itemid == 220210) |>
+  as_tibble()
+summarize(chartevents_parquet, rows = n())
+head(chartevents_parquet, n = 10)
+```
