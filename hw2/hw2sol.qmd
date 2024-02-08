@@ -103,12 +103,14 @@ Re-ingest `admissions.csv.gz` by indicating appropriate column data types in `re
 **Answer:**
 ```{r}
 read_csv("~/mimic/hosp/admissions.csv.gz", col_types = "iiTTTccccccccTTi")
-read_csv("~/mimic/hosp/admissions.csv.gz", col_types = "iiTTTccccccccTTi") |> system.time()
+read_csv("~/mimic/hosp/admissions.csv.gz", col_types = "iiTTTccccccccTTi") |> 
+  system.time()
 ```
 Yes, the run time does change slightly, by going down around 0.03 seconds. 
 
 ```{r}
-read_csv("~/mimic/hosp/admissions.csv.gz", col_types = "iiTTTccccccccTTi") |> pryr::object_size()
+read_csv("~/mimic/hosp/admissions.csv.gz", col_types = "iiTTTccccccccTTi") |> 
+  pryr::object_size()
 ```
 Now, the resultant tibble uses 50.13 MB of memory, which went down from 55.31 MB of memory before. 
 
@@ -148,7 +150,8 @@ Try to ingest only columns `subject_id`, `itemid`, `charttime`, and `valuenum` i
 
 **Answer:**
 ```{r}
-read_csv("~/mimic/hosp/labevents.csv.gz", col_select = c(subject_id, itemid, charttime, valuenum))
+read_csv("~/mimic/hosp/labevents.csv.gz", 
+         col_select = c(subject_id, itemid, charttime, valuenum))
 ```
 Selecting only certain columns solved the ingestion issue. It successfully took less than 5 minutes to ingest the selected columns from `labevents.csv.gz`. 
 
@@ -165,7 +168,10 @@ In later exercises, we will only be interested in the following lab items: creat
 **Answer:**
 ```{bash}
 #| eval: false
-zcat < ~/mimic/hosp/labevents.csv.gz | awk -F, '$5 == 50912 || $5 == 50971 || $5 == 50983 || $5 == 50902 || $5 == 50882 || $5 == 51221 || $5 == 51301 || $5 == 50931 || $5 == "itemid" {print $2, $5, $7, $10}' | gzip -k > ./labevents_filtered.csv.gz
+zcat < ~/mimic/hosp/labevents.csv.gz | awk -F, '$5 == 50912 || $5 == 50971 || 
+$5 == 50983 || $5 == 50902 || $5 == 50882 || $5 == 51221 || $5 == 51301 || 
+$5 == 50931 || $5 == "itemid" {print $2, $5, $7, $10}' | 
+gzip -k > ./labevents_filtered.csv.gz
 ```
 
 Display the first 10 lines of the new file `labevents_filtered.csv.gz`. How many lines are in this new file? How long does it take `read_csv` to ingest `labevents_filtered.csv.gz`?
@@ -206,7 +212,9 @@ Then use [`arrow::open_dataset`](https://arrow.apache.org/docs/r/reference/open_
 ```{r}
 arrow::open_dataset("labevents.csv", format = "csv") |> 
   select(subject_id, itemid, charttime, valuenum) |>
-  filter(itemid == 50912 | itemid == 50971 | itemid == 50983 | itemid == 50902 | itemid == 50882 | itemid == 51221 | itemid == 51301 | itemid == 50931) |>
+  filter(itemid == 50912 | itemid == 50971 | itemid == 50983 | itemid == 50902 | 
+           itemid == 50882 | itemid == 51221 | itemid == 51301 | 
+           itemid == 50931) |>
   as_tibble() |>
   system.time()
 ```
@@ -215,11 +223,14 @@ It took around 30 seconds for the ingest+select+filter process to run.
 ```{r}
 labevents_filtered <- arrow::open_dataset("labevents.csv", format = "csv") |> 
   select(subject_id, itemid, charttime, valuenum) |>
-  filter(itemid == 50912 | itemid == 50971 | itemid == 50983 | itemid == 50902 | itemid == 50882 | itemid == 51221 | itemid == 51301 | itemid == 50931) |>
+  filter(itemid == 50912 | itemid == 50971 | itemid == 50983 | itemid == 50902 | 
+           itemid == 50882 | itemid == 51221 | itemid == 51301 | 
+           itemid == 50931) |>
   as_tibble()
 summarize(labevents_filtered, rows = n())
 head(labevents_filtered, n = 10)
 ```
+All the values in the first 10 rows from this tibble match those in Q2.3 except for the time under the `charttime` variable. The times in this tibble seem to be 7 hours behind the times in the tibble from Q2.3. This happened because the `charttime` variable is ingested as a date and time and assumes the UTC timezone. It is then translated from the UTC time to our timezone in Los Angeles, which is currently 8 hours behind the UTC timezone. Because these times are after the start of Daylight Savings Time in early March, the difference drops to 7 hours since the UTC timezone does not observe Daylight Savings Time. 
 
 Write a few sentences to explain what is Apache Arrow. Imagine you want to explain it to a layman in an elevator. 
 
@@ -248,20 +259,26 @@ The Parquet file is 2.07 GB.
 ```{r}
 arrow::open_dataset("labevents_parquet/part-0.parquet", format = "parquet") |> 
   select(subject_id, itemid, charttime, valuenum) |>
-  filter(itemid == 50912 | itemid == 50971 | itemid == 50983 | itemid == 50902 | itemid == 50882 | itemid == 51221 | itemid == 51301 | itemid == 50931) |>
+  filter(itemid == 50912 | itemid == 50971 | itemid == 50983 | itemid == 50902 | 
+           itemid == 50882 | itemid == 51221 | itemid == 51301 | 
+           itemid == 50931) |>
   as_tibble() |>
   system.time()
 ```
 It took around 9 seconds for the ingest+select+filter process of the Parquet file to run. 
 
 ```{r}
-labevents_parquet <- arrow::open_dataset("labevents_parquet/part-0.parquet", format = "parquet") |> 
+labevents_parquet <- arrow::open_dataset("labevents_parquet/part-0.parquet", 
+                                         format = "parquet") |> 
   select(subject_id, itemid, charttime, valuenum) |>
-  filter(itemid == 50912 | itemid == 50971 | itemid == 50983 | itemid == 50902 | itemid == 50882 | itemid == 51221 | itemid == 51301 | itemid == 50931) |>
+  filter(itemid == 50912 | itemid == 50971 | itemid == 50983 | itemid == 50902 | 
+           itemid == 50882 | itemid == 51221 | itemid == 51301 | 
+           itemid == 50931) |>
   as_tibble()
 summarize(labevents_parquet, rows = n())
 head(labevents_parquet, n = 10)
 ```
+All the values in the first 10 rows from this tibble match those in Q2.3 except for the time under the `charttime` variable, which is 7 hours behind in this tibble. As explained in detail earlier, this is because of a timezone switch from the UTC timezone to our timezone in Los Angeles. 
 
 Write a few sentences to explain what is the Parquet format. Imagine you want to explain it to a layman in an elevator.
 
@@ -280,25 +297,32 @@ Ingest the Parquet file, convert it to a DuckDB table by [`arrow::to_duckdb`](ht
 arrow::open_dataset("labevents_parquet/part-0.parquet", format = "parquet") |>
   arrow::to_duckdb() |>
   select(subject_id, itemid, charttime, valuenum) |>
-  filter(itemid == 50912 | itemid == 50971 | itemid == 50983 | itemid == 50902 | itemid == 50882 | itemid == 51221 | itemid == 51301 | itemid == 50931) |>
+  filter(itemid == 50912 | itemid == 50971 | itemid == 50983 | itemid == 50902 | 
+           itemid == 50882 | itemid == 51221 | itemid == 51301 | 
+           itemid == 50931) |>
   as_tibble() |>
   system.time()
 ```
 It took around 9 seconds for the ingest+select+filter process of the Parquet file converted to a DuckDB table to run. 
 
 ```{r}
-labevents_duckdb <- arrow::open_dataset("labevents_parquet/part-0.parquet", format = "parquet") |>
+labevents_duckdb <- arrow::open_dataset("labevents_parquet/part-0.parquet", 
+                                        format = "parquet") |>
   arrow::to_duckdb() |>
   select(subject_id, itemid, charttime, valuenum) |>
-  filter(itemid == 50912 | itemid == 50971 | itemid == 50983 | itemid == 50902 | itemid == 50882 | itemid == 51221 | itemid == 51301 | itemid == 50931) |>
+  filter(itemid == 50912 | itemid == 50971 | itemid == 50983 | itemid == 50902 | 
+           itemid == 50882 | itemid == 51221 | itemid == 51301 | 
+           itemid == 50931) |>
+  arrange(subject_id, charttime, itemid) |>
   as_tibble()
 summarize(labevents_duckdb, rows = n())
 head(labevents_duckdb, n = 10)
 ```
+The values in the first 10 rows from this tibble mostly match those in Q2.3 except for the ordering of rows 4, 9, and 10. Initially, the order was completely different in this tibble due to DuckDB's parallel processing. After using `arrange()` to sort the tibble by `subject_id`, `charttime`, and `itemid`, I was able to get the tibble into mostly the same order. But since some of the rows were not sorted by ascending order for `itemid` in the tibble from Q2.3, I could not get those three rows I mentioned earlier to be exactly the same. 
 
 Write a few sentences to explain what is DuckDB. Imagine you want to explain it to a layman in an elevator.
 
-**Answer:** DuckDB is a database management system that is designed to help users analyze large data sets more quickly and efficiently. It also stores data in columns instead of rows, resulting in faster and improved data query. It stores data in the main memory of the computer, rather than in disk storage, which allows for the data be to accessed more quickly. 
+**Answer:** DuckDB is a database management system that is designed to help users analyze large data sets more quickly and efficiently. It also stores data in columns instead of rows, resulting in faster and improved data query. It uses "in-memory processing", meaning that it stores data in the main memory of the computer, rather than in disk storage, which allows for the data be to accessed more quickly. 
 
 ## Q3. Ingest and filter `chartevents.csv.gz`
 
@@ -327,10 +351,13 @@ chartevents <- arrow::open_dataset("chartevents.csv", format = "csv")
 arrow::write_dataset(chartevents, "chartevents_parquet", format = "parquet")
 ```
 
-Lastly, I used `arrow::open_dataset` to ingest the Parquet file, filtered the data set based on the vitals indicated above, and turned the output into a tibble. I displayed the number of rows and the first 10 rows of the tibble. 
+Lastly, I used `arrow::open_dataset` to ingest the Parquet file, selected the columns that I wanted, filtered the data set based on the vitals indicated above, and turned the output into a tibble. I displayed the number of rows and the first 10 rows of the tibble below. 
 ```{r}
-chartevents_parquet <- arrow::open_dataset("chartevents_parquet/part-0.parquet", format = "parquet") |> 
-  filter(itemid == 220045 | itemid == 220181 | itemid == 220179 | itemid == 223761 | itemid == 220210) |>
+chartevents_parquet <- arrow::open_dataset("chartevents_parquet/part-0.parquet", 
+                                           format = "parquet") |> 
+  select(subject_id, itemid, charttime, valuenum) |>
+  filter(itemid == 220045 | itemid == 220181 | itemid == 220179 | 
+           itemid == 223761 | itemid == 220210) |>
   as_tibble()
 summarize(chartevents_parquet, rows = n())
 head(chartevents_parquet, n = 10)
