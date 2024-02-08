@@ -3113,7 +3113,7 @@ loaded via a namespace (and not attached):
 <div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>memuse<span class="sc">::</span><span class="fu">Sys.meminfo</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>Totalram:  16.000 GiB 
-Freeram:    5.595 GiB </code></pre>
+Freeram:    1.674 GiB </code></pre>
 </div>
 </div>
 <p>In this exercise, we explore various tools for ingesting the <a href="https://mimic.mit.edu/docs/iv/">MIMIC-IV</a> data introduced in <a href="https://ucla-biostat-203b.github.io/2024winter/hw/hw1/hw1.html">homework 1</a>.</p>
@@ -3203,7 +3203,7 @@ Freeram:    5.595 GiB </code></pre>
 <div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="fu">read.csv</span>(<span class="st">&quot;~/mimic/hosp/admissions.csv.gz&quot;</span>) <span class="sc">|&gt;</span> <span class="fu">system.time</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>   user  system elapsed 
-  2.918   0.059   2.982 </code></pre>
+  2.969   0.059   3.032 </code></pre>
 </div>
 </div>
 <div class="cell" data-layout-align="center">
@@ -3232,7 +3232,7 @@ Freeram:    5.595 GiB </code></pre>
 <div class="sourceCode cell-code" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="fu">read_csv</span>(<span class="st">&quot;~/mimic/hosp/admissions.csv.gz&quot;</span>) <span class="sc">|&gt;</span> <span class="fu">system.time</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>   user  system elapsed 
-  0.788   0.063   0.390 </code></pre>
+  0.796   0.063   0.395 </code></pre>
 </div>
 </div>
 <div class="cell" data-layout-align="center">
@@ -3302,7 +3302,7 @@ Freeram:    5.595 GiB </code></pre>
 <div class="sourceCode cell-code" id="cb20"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="fu">fread</span>(<span class="st">&quot;~/mimic/hosp/admissions.csv.gz&quot;</span>) <span class="sc">|&gt;</span> <span class="fu">system.time</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>   user  system elapsed 
-  0.347   0.027   0.374 </code></pre>
+  0.347   0.031   0.379 </code></pre>
 </div>
 </div>
 <p>The <code>fread</code> function is the fastest. There are several differences in the (default) parsed data types when reading in the file using different functions. <code>read.csv</code> and <code>fread</code> reads in the <code>subject_id</code>, <code>hadm_id</code>, and <code>hospital_expire_flag</code> as integers, while <code>read_csv</code> reads these variables in as doubles. <code>read_csv</code> and <code>fread</code> reads in the <code>admittime</code>, <code>dischtime</code>, <code>deathtime</code>, <code>edregtime</code>, and <code>edouttime</code> as date-time (or called POSIXct), while <code>read.csv</code> reads these variables in as characters.</p>
@@ -3357,10 +3357,10 @@ Freeram:    5.595 GiB </code></pre>
 <span id="cb30-2"><a href="#cb30-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">system.time</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>   user  system elapsed 
-  0.769   0.063   0.381 </code></pre>
+  0.778   0.066   0.382 </code></pre>
 </div>
 </div>
-<p>Yes, the run time does change slightly, by going down around 0.03 seconds.</p>
+<p>Yes, the run time does change slightly, by going down around 0.01 seconds.</p>
 <div class="cell" data-layout-align="center">
 <div class="sourceCode cell-code" id="cb32"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a><span class="fu">read_csv</span>(<span class="st">&quot;~/mimic/hosp/admissions.csv.gz&quot;</span>, <span class="at">col_types =</span> <span class="st">&quot;iiTTTccccccccTTi&quot;</span>) <span class="sc">|&gt;</span> </span>
 <span id="cb32-2"><a href="#cb32-2" aria-hidden="true" tabindex="-1"></a>  pryr<span class="sc">::</span><span class="fu">object_size</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
@@ -3496,10 +3496,10 @@ Freeram:    5.595 GiB </code></pre>
 <div class="sourceCode cell-code" id="cb48"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb48-1"><a href="#cb48-1" aria-hidden="true" tabindex="-1"></a><span class="fu">read_csv</span>(<span class="st">&quot;labevents_filtered.csv.gz&quot;</span>) <span class="sc">|&gt;</span> <span class="fu">system.time</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>   user  system elapsed 
- 11.527   0.693  11.118 </code></pre>
+ 11.702   0.722  11.323 </code></pre>
 </div>
 </div>
-<p>It took around 12 seconds for <code>read_csv</code> to ingest <code>labevents_filtered.csv.gz</code>.</p>
+<p>It took around 11 seconds for <code>read_csv</code> to ingest <code>labevents_filtered.csv.gz</code>.</p>
 </section>
 <section id="q2.4-ingest-labevents.csv-by-apache-arrow" class="level3">
 <h3 class="anchored" data-anchor-id="q2.4-ingest-labevents.csv-by-apache-arrow">Q2.4 Ingest <code>labevents.csv</code> by Apache Arrow</h3>
@@ -3523,10 +3523,10 @@ Freeram:    5.595 GiB </code></pre>
 <span id="cb51-7"><a href="#cb51-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">system.time</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>   user  system elapsed 
- 29.735   2.337  28.338 </code></pre>
+ 29.562   2.364  28.155 </code></pre>
 </div>
 </div>
-<p>It took around 30 seconds for the ingest+select+filter process to run.</p>
+<p>It took around 28 seconds for the ingest+select+filter process to run.</p>
 <div class="cell" data-layout-align="center">
 <div class="sourceCode cell-code" id="cb53"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb53-1"><a href="#cb53-1" aria-hidden="true" tabindex="-1"></a>labevents_filtered <span class="ot">&lt;-</span> arrow<span class="sc">::</span><span class="fu">open_dataset</span>(<span class="st">&quot;labevents.csv&quot;</span>, <span class="at">format =</span> <span class="st">&quot;csv&quot;</span>) <span class="sc">|&gt;</span> </span>
 <span id="cb53-2"><a href="#cb53-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(subject_id, itemid, charttime, valuenum) <span class="sc">|&gt;</span></span>
@@ -3590,10 +3590,10 @@ Freeram:    5.595 GiB </code></pre>
 <span id="cb60-7"><a href="#cb60-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">system.time</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>   user  system elapsed 
-  8.937   3.057   3.518 </code></pre>
+  8.927   3.014   3.460 </code></pre>
 </div>
 </div>
-<p>It took around 9 seconds for the ingest+select+filter process of the Parquet file to run.</p>
+<p>It took around 4 seconds for the ingest+select+filter process of the Parquet file to run.</p>
 <div class="cell" data-layout-align="center">
 <div class="sourceCode cell-code" id="cb62"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb62-1"><a href="#cb62-1" aria-hidden="true" tabindex="-1"></a>labevents_parquet <span class="ot">&lt;-</span> arrow<span class="sc">::</span><span class="fu">open_dataset</span>(<span class="st">&quot;labevents_parquet/part-0.parquet&quot;</span>, </span>
 <span id="cb62-2"><a href="#cb62-2" aria-hidden="true" tabindex="-1"></a>                                         <span class="at">format =</span> <span class="st">&quot;parquet&quot;</span>) <span class="sc">|&gt;</span> </span>
@@ -3648,10 +3648,10 @@ Freeram:    5.595 GiB </code></pre>
 <span id="cb66-8"><a href="#cb66-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">system.time</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre><code>   user  system elapsed 
-  9.178   3.020   2.574 </code></pre>
+  9.149   3.033   2.618 </code></pre>
 </div>
 </div>
-<p>It took around 9 seconds for the ingest+select+filter process of the Parquet file converted to a DuckDB table to run.</p>
+<p>It took around 3 seconds for the ingest+select+filter process of the Parquet file converted to a DuckDB table to run.</p>
 <div class="cell" data-layout-align="center">
 <div class="sourceCode cell-code" id="cb68"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb68-1"><a href="#cb68-1" aria-hidden="true" tabindex="-1"></a>labevents_duckdb <span class="ot">&lt;-</span> arrow<span class="sc">::</span><span class="fu">open_dataset</span>(<span class="st">&quot;labevents_parquet/part-0.parquet&quot;</span>, </span>
 <span id="cb68-2"><a href="#cb68-2" aria-hidden="true" tabindex="-1"></a>                                        <span class="at">format =</span> <span class="st">&quot;parquet&quot;</span>) <span class="sc">|&gt;</span></span>

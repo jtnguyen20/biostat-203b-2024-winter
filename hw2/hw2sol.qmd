@@ -106,7 +106,7 @@ read_csv("~/mimic/hosp/admissions.csv.gz", col_types = "iiTTTccccccccTTi")
 read_csv("~/mimic/hosp/admissions.csv.gz", col_types = "iiTTTccccccccTTi") |> 
   system.time()
 ```
-Yes, the run time does change slightly, by going down around 0.03 seconds. 
+Yes, the run time does change slightly, by going down around 0.01 seconds. 
 
 ```{r}
 read_csv("~/mimic/hosp/admissions.csv.gz", col_types = "iiTTTccccccccTTi") |> 
@@ -190,7 +190,7 @@ There are 24855910 lines in this new file, including the header.
 read_csv("labevents_filtered.csv.gz")
 read_csv("labevents_filtered.csv.gz") |> system.time()
 ```
-It took around 12 seconds for `read_csv` to ingest `labevents_filtered.csv.gz`. 
+It took around 11 seconds for `read_csv` to ingest `labevents_filtered.csv.gz`. 
 
 ### Q2.4 Ingest `labevents.csv` by Apache Arrow
 
@@ -218,7 +218,7 @@ arrow::open_dataset("labevents.csv", format = "csv") |>
   as_tibble() |>
   system.time()
 ```
-It took around 30 seconds for the ingest+select+filter process to run. 
+It took around 28 seconds for the ingest+select+filter process to run. 
 
 ```{r}
 labevents_filtered <- arrow::open_dataset("labevents.csv", format = "csv") |> 
@@ -265,7 +265,7 @@ arrow::open_dataset("labevents_parquet/part-0.parquet", format = "parquet") |>
   as_tibble() |>
   system.time()
 ```
-It took around 9 seconds for the ingest+select+filter process of the Parquet file to run. 
+It took around 4 seconds for the ingest+select+filter process of the Parquet file to run. 
 
 ```{r}
 labevents_parquet <- arrow::open_dataset("labevents_parquet/part-0.parquet", 
@@ -303,7 +303,7 @@ arrow::open_dataset("labevents_parquet/part-0.parquet", format = "parquet") |>
   as_tibble() |>
   system.time()
 ```
-It took around 9 seconds for the ingest+select+filter process of the Parquet file converted to a DuckDB table to run. 
+It took around 3 seconds for the ingest+select+filter process of the Parquet file converted to a DuckDB table to run. 
 
 ```{r}
 labevents_duckdb <- arrow::open_dataset("labevents_parquet/part-0.parquet", 
