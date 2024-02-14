@@ -49,6 +49,35 @@ Do a similar visualization for the patient with `subject_id` 10013310 using ggpl
 
 Hint: We need to pull information from data files `patients.csv.gz`, `admissions.csv.gz`, `transfers.csv.gz`, `labevents.csv.gz`, `procedures_icd.csv.gz`, `diagnoses_icd.csv.gz`, `d_icd_procedures.csv.gz`, and `d_icd_diagnoses.csv.gz`. For the big file `labevents.csv.gz`, use the Parquet format you generated in Homework 2. For reproducibility, make the Parquet folder `labevents_pq` available at the current working directory `hw3`, for example, by a symbolic link. Make your code reproducible.
 
+**Answer:**
+```{r}
+#| eval: false
+#read in data files
+patients_tble <- read_csv("~/mimic/hosp/patients.csv.gz")
+admissions_tble <- read_csv("~/mimic/hosp/admissions.csv.gz")
+transfers_tble <- read_csv("~/mimic/hosp/transfers.csv.gz")
+labevents_tble <- arrow::open_dataset("labevents_pq/part-0.parquet", 
+                                      format = "parquet") |> as_tibble()
+procedures_icd_tble <- read_csv("~/mimic/hosp/procedures_icd.csv.gz")
+diagnoses_icd_tble <- read_csv("~/mimic/hosp/diagnoses_icd.csv.gz")
+d_icd_procedures_tble <- read_csv("~/mimic/hosp/d_icd_procedures.csv.gz")
+d_icd_diagnoses_tble <- read_csv("~/mimic/hosp/d_icd_diagnoses.csv.gz")
+
+#define variables used in ggplot 
+sid <- 10013310
+#gender <- "F"
+#patient_demo <- paste("Patient", sid, )
+
+ggplot() +
+  geom_segment(data = subset(transfers_tble, subject_id == sid),
+               aes(x = intime, xend = outtime, y = 0, yend = 0, 
+                   color = careunit)) +
+  labs(title = "Patient 10013310, F, 70 years old, Black/African",
+       x = "Calendar Time") +
+  theme_bw() + 
+  theme(legend.position = "bottom")
+```
+
 ### Q1.2 ICU stays
 
 ICU stays are a subset of ADT history. This figure shows the vitals of the patient `10001217` during ICU stays. The x-axis is the calendar time, and the y-axis is the value of the vital. The color of the line represents the type of vital. The facet grid shows the abbreviation of the vital and the stay ID.
@@ -56,6 +85,13 @@ ICU stays are a subset of ADT history. This figure shows the vitals of the patie
 ![](10001217_icu.png)
 
 Do a similar visualization for the patient `10013310`.
+
+**Answer:**
+```{r}
+#| eval: false
+ggplot(data = icustays_tble) +
+  geom_line(aes(x = ))
+```
 
 ## Q2. ICU stays
 
@@ -69,8 +105,8 @@ zcat < ~/mimic/icu/icustays.csv.gz | head
 Import `icustays.csv.gz` as a tibble `icustays_tble`. 
 
 ```{r}
-icustays_tble <- read_csv("~/mimic/icu/icustays.csv.gz")
-print(icustays_tble)
+icustays_tble <- read_csv("~/mimic/icu/icustays.csv.gz") |>
+  print()
 ```
 
 ### Q2.2 Summary and visualization
@@ -90,6 +126,22 @@ icustays_tble |>
 ```
 Without specifying unique values for `subject_id`, there are 73,181 total rows, which is more than the 50,920 rows from specifying unique values for `subject_id`. Thus, a `subject_id` can have multiple ICU stays. 
 
+```{r}
+icustays_tble |>
+  group_by(subject_id) |>
+  summarize(
+    count = n()
+  ) 
+
+ggplot(data = icustays_tble) +
+  geom_bar(mapping = aes(x = subject_id)) + 
+  labs(
+    title = "Count of ICU stays by patient", 
+    x = "Patient's Subject ID",
+    y = "Count"
+  ) 
+#ERROR: graph not showing bars... too many subject ids?
+```
 
 ## Q3. `admissions` data
 
@@ -102,13 +154,58 @@ zcat < ~/mimic/hosp/admissions.csv.gz | head
 
 Import `admissions.csv.gz` as a tibble `admissions_tble`.
 
+**Answer:**
+```{r}
+admissions_tble <- read_csv("~/mimic/hosp/admissions.csv.gz") |>
+  print()
+```
+
 ### Q3.2 Summary and visualization
 
 Summarize the following information by graphics and explain any patterns you see.
 
 - number of admissions per patient  
+
+**Answer:**
+```{r}
+ggplot(data = admissions_tble) +
+  geom_bar(mapping = aes(x = subject_id)) + 
+  labs(
+    title = "Count of admissions by patient", 
+    x = "Patient's Subject ID",
+    y = "Count"
+  ) 
+#ERROR: graph not showing bars... too many subject ids?
+```
+
 - admission hour (anything unusual?)  
+
+**Answer:**
+```{r}
+ggplot(data = admissions_tble) +
+  geom_bar(mapping = aes(x = hour(admittime))) + 
+  labs(
+    title = "Count of the hour of admission", 
+    x = "Hour of Admission",
+    y = "Count"
+  ) 
+```
+Yes, there is an unusually high number of admissions that occur at 0am and 7am, relative to the other hours in the morning. Aside from these two unusual hours, admissions are generally low in the morning; however, admissions start to increase in the early afternoon and stay at high numbers during the night. 
+
 - admission minute (anything unusual?)  
+
+**Answer:**
+```{r}
+ggplot(data = admissions_tble) +
+  geom_bar(mapping = aes(x = minute(admittime))) + 
+  labs(
+    title = "Count of the minute of admission", 
+    x = "Minute of Admission",
+    y = "Count"
+  ) 
+```
+Yes, there is an unusually high number of admissions that occur at the 0 minute, 15 minute, 30 minute, and 45 minute. This could be due a tendency of healthcare workers to round to the nearest quarter of the hour when recording the admission time. Aside from these unusual minutes, all other minutes have similar numbers of admissions. 
+
 - length of hospital stay (from admission to discharge) (anything unusual?)  
 
 According to the [MIMIC-IV documentation](https://mimic.mit.edu/docs/iv/about/concepts/#date-shifting), 
