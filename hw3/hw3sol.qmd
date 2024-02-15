@@ -136,7 +136,7 @@ icustays_tble |>
 ggplot(data = icustays_tble) +
   geom_bar(mapping = aes(x = subject_id)) + 
   labs(
-    title = "Count of ICU stays by patient", 
+    title = "Distribution of ICU stays by patient", 
     x = "Patient's Subject ID",
     y = "Count"
   ) 
@@ -171,7 +171,7 @@ Summarize the following information by graphics and explain any patterns you see
 ggplot(data = admissions_tble) +
   geom_bar(mapping = aes(x = subject_id)) + 
   labs(
-    title = "Count of admissions by patient", 
+    title = "Distribution of admissions by patient", 
     x = "Patient's Subject ID",
     y = "Count"
   ) 
@@ -185,7 +185,7 @@ ggplot(data = admissions_tble) +
 ggplot(data = admissions_tble) +
   geom_bar(mapping = aes(x = hour(admittime))) + 
   labs(
-    title = "Count of the hour of admission", 
+    title = "Distribution of the hour of admission", 
     x = "Hour of Admission",
     y = "Count"
   ) 
@@ -199,7 +199,7 @@ Yes, there is an unusually high number of admissions that occur at 0am and 7am, 
 ggplot(data = admissions_tble) +
   geom_bar(mapping = aes(x = minute(admittime))) + 
   labs(
-    title = "Count of the minute of admission", 
+    title = "Distribution of the minute of admission", 
     x = "Minute of Admission",
     y = "Count"
   ) 
@@ -207,6 +207,18 @@ ggplot(data = admissions_tble) +
 Yes, there is an unusually high number of admissions that occur at the 0 minute, 15 minute, 30 minute, and 45 minute. This could be due a tendency of healthcare workers to round to the nearest quarter of the hour when recording the admission time. Aside from these unusual minutes, all other minutes have similar numbers of admissions. 
 
 - length of hospital stay (from admission to discharge) (anything unusual?)  
+
+**Answer:**
+```{r}
+ggplot(data = admissions_tble) +
+  geom_bar(mapping = aes(x = (as.duration(admittime %--% dischtime)/86400))) + 
+  labs(
+    title = "Distribution of hospital stay length", 
+    x = "Hospital Stay Length (Days)",
+    y = "Count"
+  ) 
+```
+Most hospital stays are relatively short, spanning a day to a few days. However, there do seem to be some hospital stays that are longer, spanning several days to weeks. The x axis of the graph extends to 300 days, indicating that there is an unusually long hospital stay that lasted around 300 days. 
 
 According to the [MIMIC-IV documentation](https://mimic.mit.edu/docs/iv/about/concepts/#date-shifting), 
 
@@ -223,9 +235,36 @@ zcat < ~/mimic/hosp/patients.csv.gz | head
 
 Import `patients.csv.gz` (<https://mimic.mit.edu/docs/iv/modules/hosp/patients/>) as a tibble `patients_tble`.
 
+**Answer:**
+```{r}
+patients_tble <- read_csv("~/mimic/hosp/patients.csv.gz") |>
+  print()
+```
+
 ### Q4.2 Summary and visualization
 
 Summarize variables `gender` and `anchor_age` by graphics, and explain any patterns you see.
+
+**Answer:**
+```{r}
+ggplot(data = patients_tble) +
+  geom_violin(mapping = aes(x = gender, y = anchor_age)) + 
+  labs(
+    title = "Distribution of patient age by patient gender", 
+    x = "Gender",
+    y = "Age"
+  ) 
+
+ggplot(data = patients_tble) +
+  geom_histogram(binwidth = 1, mapping = aes(x = anchor_age, fill = gender)) + 
+  labs(
+    title = "Distribution of patient age by patient gender",
+    x = "Age",
+    y = "Count",
+    fill = "Gender"
+  ) 
+```
+In general, there is a larger share of young adult patients compared to adult and elderly patients, for both genders. This observation is surprising, as we would assume the opposite with more elderly patients and less young adult patients. However, the oldest elderly patients seem to make up a sizable share of the total patients, likely due to worsening health conditions. Across all ages, there is a larger share of female patients compared to male patients, and this difference is especially prominent for the youngest and oldest age groups. This could be due to multiple factors, e.g. women may be more likely to seek out medical care or come in more often for female-specific health conditions. 
 
 ## Q5. Lab results
 
@@ -243,8 +282,23 @@ We are interested in the lab measurements of creatinine (50912), potassium (5097
 
 ![](labevents_tble.png)
 
-
 Hint: Use the Parquet format you generated in Homework 2. For reproducibility, make `labevents_pq` folder available at the current working directory `hw3`, for example, by a symbolic link.
+
+**Answer:**
+```{r}
+labevents_subset <- arrow::open_dataset("labevents_pq/part-0.parquet", 
+                                      format = "parquet") |>
+  select(subject_id, itemid, storetime, valuenum) |>
+  filter(itemid == 50912 | itemid == 50971 | itemid == 50983 | itemid == 50902 |
+           itemid == 50882 | itemid == 51221 | itemid == 51301 | 
+           itemid == 50931) |>
+  as_tibble()
+icustays_subset <- icustays_tble |> 
+  select(subject_id, stay_id, intime, outtime)
+labevents_icustays <- left_join(icustays_subset, labevents_subset, 
+                                by = "subject_id") 
+head(labevents_icustays, n=10)
+```
 
 ## Q6. Vitals from charted events
 
