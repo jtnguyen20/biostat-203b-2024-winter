@@ -264,7 +264,7 @@ ggplot(data = patients_tble) +
     fill = "Gender"
   ) 
 ```
-In general, there is a larger share of young adult patients compared to adult and elderly patients, for both genders. This observation is surprising, as we would assume the opposite with more elderly patients and less young adult patients. However, the oldest elderly patients seem to make up a sizable share of the total patients, likely due to worsening health conditions. Across all ages, there is a larger share of female patients compared to male patients, and this difference is especially prominent for the youngest and oldest age groups. This could be due to multiple factors, e.g. women may be more likely to seek out medical care or come in more often for female-specific health conditions. 
+In general, there is a larger share of young adult patients compared to adult and elderly patients, for both genders. This observation is surprising, as we would assume the opposite with more elderly patients and less young adult patients. However, the oldest elderly patients seem to make up a sizable share of the total patients, likely due to worsening health conditions. Across all ages, there is a larger share of female patients compared to male patients, and this difference is especially prominent for the youngest and oldest age groups. This could be due to multiple factors or a combination of factors, e.g. women may be more likely to seek out medical care or come in more often for female-specific health conditions. 
 
 ## Q5. Lab results
 
@@ -382,14 +382,282 @@ The final `mimic_icu_cohort` should have one row per ICU stay and columns for ea
 
 ![](mimic_icu_cohort.png)
 
+**Answer:**
+```{r}
+mimic_icu_cohort <- left_join(icustays_tble, admissions_tble, 
+                              by = c("subject_id", "hadm_id")) |>
+  left_join(patients_tble, by = "subject_id") |>
+  left_join(labevents_tble, by = c("subject_id", "stay_id")) |>
+  left_join(chartevents_tble, by = c("subject_id", "stay_id")) |>
+  mutate(intime_year = year(intime),
+         year_diff = intime_year - anchor_year,
+         intime_age = anchor_age + year_diff) |>
+  filter(intime_age >= 18) |>
+  select(-c(intime_year, year_diff)) |>
+  print()
+```
+Above is my final `mimic_icu_cohort`. The number of rows in my cohort (73,181) does not exactly match the number of rows in the picture (73,097), which is because I filtered the age at intime by >= 18 as the instructions requested. However, when I tested out filtering the age at intime by > 18, the number of rows was 73,097, which matched the picture. I kept the filter as age at intime >= 18 to comply with the instructions. 
+
 ## Q8. Exploratory data analysis (EDA)
 
 Summarize the following information about the ICU stay cohort `mimic_icu_cohort` using appropriate numerics or graphs:
 
 - Length of ICU stay `los` vs demographic variables (race, insurance, marital_status, gender, age at intime)
 
+**Answer:**
+
+::: {.panel-tabset}
+
+#### Race
+
+```{r}
+ggplot(data = mimic_icu_cohort) +
+  geom_boxplot(mapping = aes(x = race, y = los)) + 
+  labs(
+    title = "Distribution of ICU stay length by patient race", 
+    x = "Race",
+    y = "ICU Stay Length (Fractional Days)"
+  ) + 
+  coord_flip()
+```
+
+#### Insurance
+
+```{r}
+ggplot(data = mimic_icu_cohort) +
+  geom_boxplot(mapping = aes(x = insurance, y = los)) + 
+  labs(
+    title = "Distribution of ICU stay length by patient's insurance", 
+    x = "Insurance",
+    y = "ICU Stay Length (Fractional Days)"
+  ) +
+  coord_flip()
+```
+
+#### Marital Status
+
+```{r}
+ggplot(data = mimic_icu_cohort) +
+  geom_boxplot(mapping = aes(x = marital_status, y = los)) + 
+  labs(
+    title = "Distribution of ICU stay length by patient's marital status", 
+    x = "Marital Status",
+    y = "ICU Stay Length (Fractional Days)"
+  ) + 
+  coord_flip()
+```
+
+#### Gender
+
+```{r}
+ggplot(data = mimic_icu_cohort) +
+  geom_boxplot(mapping = aes(x = gender, y = los)) + 
+  labs(
+    title = "Distribution of ICU stay length by patient gender", 
+    x = "Gender",
+    y = "ICU Stay Length (Fractional Days)"
+  ) + 
+  coord_flip()
+```
+
+#### Age
+
+```{r}
+ggplot(data = mimic_icu_cohort) +
+  geom_point(mapping = aes(x = intime_age, y = los)) +
+  labs(
+    title = "Distribution of ICU stay length by patient age", 
+    caption = "Patient age at time of transfer to ICU.",
+    x = "Age",
+    y = "ICU Stay Length (Fractional Days)"
+  ) 
+```
+
+:::
+
 - Length of ICU stay `los` vs the last available lab measurements before ICU stay
+
+**Answer:**
+
+::: {.panel-tabset}
+
+#### Bicarbonate
+
+```{r}
+ggplot(data = mimic_icu_cohort) +
+  geom_point(mapping = aes(x = bicarbonate, y = los)) +
+  labs(
+    title = "Distribution of ICU stay length by bicarbonate measurement",
+    x = "Bicarbonate ()",
+    y = "ICU Stay Length (Fractional Days)"
+  ) 
+```
+
+#### Chloride
+
+```{r}
+ggplot(data = mimic_icu_cohort) +
+  geom_point(mapping = aes(x = chloride, y = los)) +
+  labs(
+    title = "Distribution of ICU stay length by chloride measurement",
+    x = "Chloride ()",
+    y = "ICU Stay Length (Fractional Days)"
+  ) 
+```
+
+#### Creatinine
+
+```{r}
+ggplot(data = mimic_icu_cohort) +
+  geom_point(mapping = aes(x = creatinine, y = los)) +
+  labs(
+    title = "Distribution of ICU stay length by creatinine measurement",
+    x = "Creatinine ()",
+    y = "ICU Stay Length (Fractional Days)"
+  ) 
+```
+
+#### Glucose
+
+```{r}
+ggplot(data = mimic_icu_cohort) +
+  geom_point(mapping = aes(x = glucose, y = los)) +
+  labs(
+    title = "Distribution of ICU stay length by glucose measurement",
+    x = "Glucose ()",
+    y = "ICU Stay Length (Fractional Days)"
+  ) 
+```
+
+#### Potassium
+
+```{r}
+ggplot(data = mimic_icu_cohort) +
+  geom_point(mapping = aes(x = potassium, y = los)) +
+  labs(
+    title = "Distribution of ICU stay length by potassium measurement",
+    x = "Potassium ()",
+    y = "ICU Stay Length (Fractional Days)"
+  ) 
+```
+
+#### Sodium
+
+```{r}
+ggplot(data = mimic_icu_cohort) +
+  geom_point(mapping = aes(x = sodium, y = los)) +
+  labs(
+    title = "Distribution of ICU stay length by sodium measurement",
+    x = "Sodium ()",
+    y = "ICU Stay Length (Fractional Days)"
+  ) 
+```
+
+#### Hematocrit
+
+```{r}
+ggplot(data = mimic_icu_cohort) +
+  geom_point(mapping = aes(x = hematocrit, y = los)) +
+  labs(
+    title = "Distribution of ICU stay length by hematocrit measurement",
+    x = "Hematocrit ()",
+    y = "ICU Stay Length (Fractional Days)"
+  ) 
+```
+
+#### White Blood Cell
+
+```{r}
+ggplot(data = mimic_icu_cohort) +
+  geom_point(mapping = aes(x = wbc, y = los)) +
+  labs(
+    title = "Distribution of ICU stay length by white blood cell count",
+    x = "White Blood Cell Count",
+    y = "ICU Stay Length (Fractional Days)"
+  ) 
+```
+
+:::
 
 - Length of ICU stay `los` vs the average vital measurements within the first hour of ICU stay
 
+**Answer:**
+
+::: {.panel-tabset}
+
+#### Heart Rate
+
+```{r}
+ggplot(data = mimic_icu_cohort) +
+  geom_point(mapping = aes(x = heart_rate, y = los)) +
+  labs(
+    title = "Distribution of ICU stay length by heart rate measurement",
+    x = "Heart Rate ()",
+    y = "ICU Stay Length (Fractional Days)"
+  ) 
+```
+
+#### Systolic Non-invasive Blood Pressure
+
+```{r}
+ggplot(data = mimic_icu_cohort) +
+  geom_point(mapping = aes(x = non_invasive_blood_pressure_systolic, y = los)) +
+  labs(
+    title = "Distribution of ICU stay length by systolic non-invasive blood pressure measurement",
+    x = "Systolic Non-invasive Blood Pressure ()",
+    y = "ICU Stay Length (Fractional Days)"
+  ) 
+```
+
+#### Diastolic Non-invasive Blood Pressure
+
+```{r}
+ggplot(data = mimic_icu_cohort) +
+  geom_point(mapping = aes(x = non_invasive_blood_pressure_diastolic, 
+                           y = los)) +
+  labs(
+    title = "Distribution of ICU stay length by diastolic non-invasive blood pressure measurement",
+    x = "Diastolic Non-invasive Blood Pressure ()",
+    y = "ICU Stay Length (Fractional Days)"
+  ) 
+```
+
+#### Respiratory Rate
+
+```{r}
+ggplot(data = mimic_icu_cohort) +
+  geom_point(mapping = aes(x = respiratory_rate, y = los)) +
+  labs(
+    title = "Distribution of ICU stay length by respiratory rate measurement",
+    x = "Respiratory Rate ()",
+    y = "ICU Stay Length (Fractional Days)"
+  ) 
+```
+
+#### Body Temperature
+
+```{r}
+ggplot(data = mimic_icu_cohort) +
+  geom_point(mapping = aes(x = temperature_fahrenheit, y = los)) +
+  labs(
+    title = "Distribution of ICU stay length by body temperature measurement",
+    x = "Body Temperature (degrees Fahrenheit)",
+    y = "ICU Stay Length (Fractional Days)"
+  ) 
+```
+
+:::
+
 - Length of ICU stay `los` vs first ICU unit
+
+**Answer:**
+```{r}
+ggplot(data = mimic_icu_cohort) +
+  geom_boxplot(mapping = aes(x = first_careunit, y = los)) + 
+  labs(
+    title = "Distribution of ICU stay length by first ICU unit", 
+    x = "First ICU Unit",
+    y = "ICU Stay Length (Fractional Days)"
+  ) + 
+  coord_flip()
+```
