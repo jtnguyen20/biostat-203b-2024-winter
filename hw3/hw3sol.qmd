@@ -294,10 +294,29 @@ labevents_subset <- arrow::open_dataset("labevents_pq/part-0.parquet",
            itemid == 50931) |>
   as_tibble()
 icustays_subset <- icustays_tble |> 
-  select(subject_id, stay_id, intime, outtime)
-labevents_icustays <- left_join(icustays_subset, labevents_subset, 
-                                by = "subject_id") 
-head(labevents_icustays, n=10)
+  select(subject_id, stay_id, intime)
+labevents_tble <- left_join(icustays_subset, labevents_subset, 
+                            by = "subject_id", 
+                            relationship = "many-to-many") |>
+  mutate(span = as.duration(storetime - intime)) |> 
+  group_by(subject_id, stay_id, itemid) |>
+  arrange(span, .by_group = TRUE) |>
+  filter(span < 0) |>
+  slice_tail() |>
+  select(-c(intime, storetime, span)) |>
+  pivot_wider(names_from = itemid, values_from = valuenum) |>
+  rename(
+    creatinine = "50912",
+    potassium = "50971",
+    sodium = "50983",
+    chloride = "50902",
+    bicarbonate = "50882",
+    hematocrit = "51221",
+    wbc = "51301",
+    glucose = "50931"
+  ) |>
+  ungroup() |>
+  print()
 ```
 
 ## Q6. Vitals from charted events
@@ -317,6 +336,37 @@ We are interested in the vitals for ICU patients: heart rate (220045), systolic 
 ![](chartevents_tble.png)
 
 Hint: Use the Parquet format you generated in Homework 2. For reproducibility, make `chartevents_pq` folder available at the current working directory, for example, by a symbolic link.
+
+**Answer:**
+```{r}
+chartevents_subset <- arrow::open_dataset("chartevents_pq/part-0.parquet", 
+                                      format = "parquet") |>
+  select(subject_id, stay_id, charttime, itemid, valuenum) |>
+  filter(itemid == 220045 | itemid == 220179 | itemid == 220180 | 
+           itemid == 223761 | itemid == 220210) |>
+  as_tibble()
+icustays_subset <- icustays_tble |> 
+  select(subject_id, stay_id, intime)
+chartevents_tble <- left_join(chartevents_subset, icustays_subset, 
+                                  by = c("subject_id", "stay_id"), 
+                                  relationship = "many-to-many") |> 
+  mutate(span = as.duration(charttime - intime)) |>
+  group_by(subject_id, stay_id, itemid) |>
+  arrange(span, .by_group = TRUE) |>
+  slice_head() |> 
+  select(-c(intime, charttime, span)) |>
+  pivot_wider(names_from = itemid, values_from = valuenum) |>
+  rename(
+    heart_rate = "220045",
+    non_invasive_blood_pressure_systolic = "220179",
+    non_invasive_blood_pressure_diastolic = "220180",
+    temperature_fahrenheit = "223761",
+    respiratory_rate = "220210"
+  ) |> 
+  ungroup() |>
+  print()
+#row 6, respiratory rate has diff value from photo
+```
 
 ## Q7. Putting things together
 
