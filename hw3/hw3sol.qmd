@@ -256,7 +256,8 @@ ggplot(data = patients_tble) +
   ) 
 
 ggplot(data = patients_tble) +
-  geom_histogram(binwidth = 1, mapping = aes(x = anchor_age, fill = gender)) + 
+  geom_histogram(binwidth = 2, mapping = aes(x = anchor_age, fill = gender),
+                 position = "dodge") + 
   labs(
     title = "Distribution of patient age by patient gender",
     x = "Age",
@@ -264,7 +265,7 @@ ggplot(data = patients_tble) +
     fill = "Gender"
   ) 
 ```
-In general, there is a larger share of young adult patients compared to adult and elderly patients, for both genders. This observation is surprising, as we would assume the opposite with more elderly patients and less young adult patients. However, the oldest elderly patients seem to make up a sizable share of the total patients, likely due to worsening health conditions. Across all ages, there is a larger share of female patients compared to male patients, and this difference is especially prominent for the youngest and oldest age groups. This could be due to multiple factors or a combination of factors, e.g. women may be more likely to seek out medical care or come in more often for female-specific health conditions. 
+In general, there is a larger share of young adult patients compared to adult and elderly patients, for both genders. This observation is surprising, as we would assume the opposite with more elderly patients and less young adult patients. However, the oldest elderly patients seem to make up a sizable share of the total patients, likely due to worsening health conditions. Across young adult and elderly patients, there is a larger share of female patients, while across adult patients, there is a larger share of male patients. This could be due to multiple factors or a combination of factors, e.g. women may be more likely to seek out medical care or come in more often for female-specific health conditions that are critical at younger and older ages. 
 
 ## Q5. Lab results
 
@@ -412,59 +413,64 @@ Summarize the following information about the ICU stay cohort `mimic_icu_cohort`
 
 ```{r}
 ggplot(data = mimic_icu_cohort) +
-  geom_boxplot(mapping = aes(x = race, y = los)) + 
+  geom_col(mapping = aes(x = race, y = los)) + 
   labs(
     title = "Distribution of ICU stay length by patient race", 
     x = "Race",
-    y = "ICU Stay Length (Fractional Days)"
+    y = "Total ICU Stay Length (Fractional Days)"
   ) + 
-  coord_flip()
+  coord_flip() 
 ```
+White patients have the longest total ICU stay, followed by patients with an unknown race and Black/African American patients. 
 
 #### Insurance
 
 ```{r}
 ggplot(data = mimic_icu_cohort) +
-  geom_boxplot(mapping = aes(x = insurance, y = los)) + 
+  geom_col(mapping = aes(x = insurance, y = los)) + 
   labs(
     title = "Distribution of ICU stay length by patient's insurance", 
     x = "Insurance",
-    y = "ICU Stay Length (Fractional Days)"
+    y = "Total ICU Stay Length (Fractional Days)"
   ) +
   coord_flip()
 ```
+Patients with insurance other than Medicare and Medicaid have the longest total ICU stay, closely followed by patients with Medicare insurance. Compared to patients with Medicare or other insurance, patients with Medicaid have a shorter total ICU stay.  
 
 #### Marital Status
 
 ```{r}
 ggplot(data = mimic_icu_cohort) +
-  geom_boxplot(mapping = aes(x = marital_status, y = los)) + 
+  geom_col(mapping = aes(x = marital_status, y = los)) + 
   labs(
     title = "Distribution of ICU stay length by patient's marital status", 
     x = "Marital Status",
-    y = "ICU Stay Length (Fractional Days)"
+    y = "Total ICU Stay Length (Fractional Days)"
   ) + 
   coord_flip()
 ```
+Married patients have the longest total ICU stay, followed by single patients. Compared to married or single patients, widowed and divorced patients as well as patients with missing marital status data have shorter total ICU stays.  
 
 #### Gender
 
 ```{r}
 ggplot(data = mimic_icu_cohort) +
-  geom_boxplot(mapping = aes(x = gender, y = los)) + 
+  geom_col(mapping = aes(x = gender, y = los)) + 
   labs(
     title = "Distribution of ICU stay length by patient gender", 
     x = "Gender",
-    y = "ICU Stay Length (Fractional Days)"
+    y = "Total ICU Stay Length (Fractional Days)"
   ) + 
   coord_flip()
 ```
+Male patients have a longer total ICU stay, compared to female patients. 
 
 #### Age
 
 ```{r}
 ggplot(data = mimic_icu_cohort) +
-  geom_point(mapping = aes(x = intime_age, y = los)) +
+  geom_point(mapping = aes(x = intime_age, y = los), 
+             position = "jitter") +
   labs(
     title = "Distribution of ICU stay length by patient age", 
     caption = "Patient age at time of transfer to ICU.",
@@ -472,6 +478,7 @@ ggplot(data = mimic_icu_cohort) +
     y = "ICU Stay Length (Fractional Days)"
   ) 
 ```
+Across all ages, most ICU stays tend to be 30 days or less, though there are some patients with ICU stays longer than 30 days. Generally, the youngest and oldest patients tend to have shorter ICU stays, while a larger share of adults aged 50-90 years tend to have longer ICU stays. 
 
 :::
 
@@ -485,97 +492,113 @@ ggplot(data = mimic_icu_cohort) +
 
 ```{r}
 ggplot(data = mimic_icu_cohort) +
-  geom_point(mapping = aes(x = bicarbonate, y = los)) +
+  geom_point(mapping = aes(x = bicarbonate, y = los),
+             position = "jitter") +
   labs(
     title = "Distribution of ICU stay length by bicarbonate measurement",
-    x = "Bicarbonate ()",
+    x = "Bicarbonate (mEq/L)",
     y = "ICU Stay Length (Fractional Days)"
   ) 
 ```
+Patients with bicarbonate levels between ~20-30 mEq/L measured right before their ICU stay tend to have longer ICU stays, while patients with very low or very high bicarbonate levels tend to have shorter ICU stays. 
 
 #### Chloride
 
 ```{r}
 ggplot(data = mimic_icu_cohort) +
-  geom_point(mapping = aes(x = chloride, y = los)) +
+  geom_point(mapping = aes(x = chloride, y = los),
+             position = "jitter") +
   labs(
     title = "Distribution of ICU stay length by chloride measurement",
-    x = "Chloride ()",
+    x = "Chloride (mEq/L)",
     y = "ICU Stay Length (Fractional Days)"
   ) 
 ```
+Patients with chloride levels ~100 mEq/L tend to have the longest ICU stays, while patients with very low or very high chloride levels tend to have shorter ICU stays. 
 
 #### Creatinine
 
 ```{r}
 ggplot(data = mimic_icu_cohort) +
-  geom_point(mapping = aes(x = creatinine, y = los)) +
+  geom_point(mapping = aes(x = creatinine, y = los),
+             position = "jitter") +
   labs(
     title = "Distribution of ICU stay length by creatinine measurement",
-    x = "Creatinine ()",
+    x = "Creatinine (mg/dL)",
     y = "ICU Stay Length (Fractional Days)"
   ) 
 ```
+Patients with very low creatinine levels tend to have longer ICU stays, while patients with higher creatinine levels tend to have shorter ICU stays. 
 
 #### Glucose
 
 ```{r}
 ggplot(data = mimic_icu_cohort) +
-  geom_point(mapping = aes(x = glucose, y = los)) +
+  geom_point(mapping = aes(x = glucose, y = los),
+             position = "jitter") +
   labs(
     title = "Distribution of ICU stay length by glucose measurement",
-    x = "Glucose ()",
+    x = "Glucose (mg/dL)",
     y = "ICU Stay Length (Fractional Days)"
   ) 
 ```
+Patients with low glucose levels tend to have longer ICU stays, while patients with higher glucose levels tend to have shorter ICU stays. 
 
 #### Potassium
 
 ```{r}
 ggplot(data = mimic_icu_cohort) +
-  geom_point(mapping = aes(x = potassium, y = los)) +
+  geom_point(mapping = aes(x = potassium, y = los),
+             position = "jitter") +
   labs(
     title = "Distribution of ICU stay length by potassium measurement",
-    x = "Potassium ()",
+    x = "Potassium (mEq/L)",
     y = "ICU Stay Length (Fractional Days)"
   ) 
 ```
+Patients with potassium levels between ~3-6 mEq/L tend to have longer ICU stays, while patients with very low or very high potassium levels tend to have shorter ICU stays. 
 
 #### Sodium
 
 ```{r}
 ggplot(data = mimic_icu_cohort) +
-  geom_point(mapping = aes(x = sodium, y = los)) +
+  geom_point(mapping = aes(x = sodium, y = los),
+             position = "jitter") +
   labs(
     title = "Distribution of ICU stay length by sodium measurement",
-    x = "Sodium ()",
+    x = "Sodium (mEq/L)",
     y = "ICU Stay Length (Fractional Days)"
   ) 
 ```
+Patients with sodium levels between ~125-150 mEq/L tend to have longer ICU stays, while patients with lower and higher sodium levels tend to have shorter ICU stays. 
 
 #### Hematocrit
 
 ```{r}
 ggplot(data = mimic_icu_cohort) +
-  geom_point(mapping = aes(x = hematocrit, y = los)) +
+  geom_point(mapping = aes(x = hematocrit, y = los),
+             position = "jitter") +
   labs(
     title = "Distribution of ICU stay length by hematocrit measurement",
-    x = "Hematocrit ()",
+    x = "Hematocrit (%)",
     y = "ICU Stay Length (Fractional Days)"
   ) 
 ```
+Patients with hematocrit levels between ~25-45% tend to longer ICU stays, while patients with lower and higher hematocrit levels tend to have shorter ICU stays. 
 
 #### White Blood Cell
 
 ```{r}
 ggplot(data = mimic_icu_cohort) +
-  geom_point(mapping = aes(x = wbc, y = los)) +
+  geom_point(mapping = aes(x = wbc, y = los),
+             position = "jitter") +
   labs(
     title = "Distribution of ICU stay length by white blood cell count",
     x = "White Blood Cell Count",
     y = "ICU Stay Length (Fractional Days)"
   ) 
 ```
+Patients with very low white blood cell counts tend to have longer ICU stays, while patients with higher white blood cell counts tend to have shorter ICU stays. 
 
 :::
 
@@ -589,13 +612,25 @@ ggplot(data = mimic_icu_cohort) +
 
 ```{r}
 ggplot(data = mimic_icu_cohort) +
-  geom_point(mapping = aes(x = heart_rate, y = los)) +
+  geom_point(mapping = aes(x = heart_rate, y = los),
+             position = "jitter") +
   labs(
     title = "Distribution of ICU stay length by heart rate measurement",
-    x = "Heart Rate ()",
+    x = "Heart Rate (bpm)",
     y = "ICU Stay Length (Fractional Days)"
-  ) 
+  )
+
+ggplot(data = mimic_icu_cohort) +
+  geom_point(mapping = aes(x = heart_rate, y = los),
+             position = "jitter") +
+  labs(
+    title = "Distribution of ICU stay length by heart rate measurement",
+    x = "Heart Rate (bpm)",
+    y = "ICU Stay Length (Fractional Days)"
+  ) + 
+  coord_cartesian(xlim = c(0, 250))
 ```
+The first plot shows one observation with an extremely high heart rate (possibly due to a recording error?), which masks the variability in the distribution. The second plot ignores this observation, zooming into the distribution of heart rates between 0-250 bpm. In the second plot, we can see that patients with heart rates between ~75-125 bpm tend to have longer ICU stays, compared to patients with lower or higher heart rates. 
 
 #### Systolic Non-invasive Blood Pressure
 
@@ -604,47 +639,84 @@ ggplot(data = mimic_icu_cohort) +
   geom_point(mapping = aes(x = non_invasive_blood_pressure_systolic, y = los)) +
   labs(
     title = "Distribution of ICU stay length by systolic non-invasive blood pressure measurement",
-    x = "Systolic Non-invasive Blood Pressure ()",
+    x = "Systolic Non-invasive Blood Pressure (mmHg)",
     y = "ICU Stay Length (Fractional Days)"
   ) 
+
+ggplot(data = mimic_icu_cohort) +
+  geom_point(mapping = aes(x = non_invasive_blood_pressure_systolic, y = los)) +
+  labs(
+    title = "Distribution of ICU stay length by systolic non-invasive blood pressure measurement",
+    x = "Systolic Non-invasive Blood Pressure (mmHg)",
+    y = "ICU Stay Length (Fractional Days)"
+  ) + 
+  coord_cartesian(xlim = c(0, 275))
 ```
+The first plot shows two observation with extremely high systolic non-invasive blood pressures (possibly due to recording errors?), which masks the variability in the distribution. The second plot ignores these observations, zooming into the distribution of systolic non-invasive blood pressures between 0-275 mmHg. In the second plot, we can see that patients with systolic non-invasive blood pressures between ~100-150 mmHg tend to have longer ICU stays, compared to patients with lower or higher blood pressures.  
 
 #### Diastolic Non-invasive Blood Pressure
 
 ```{r}
 ggplot(data = mimic_icu_cohort) +
   geom_point(mapping = aes(x = non_invasive_blood_pressure_diastolic, 
-                           y = los)) +
+                           y = los),
+             position = "jitter") +
   labs(
     title = "Distribution of ICU stay length by diastolic non-invasive blood pressure measurement",
-    x = "Diastolic Non-invasive Blood Pressure ()",
+    x = "Diastolic Non-invasive Blood Pressure (mmHg)",
     y = "ICU Stay Length (Fractional Days)"
   ) 
+
+ggplot(data = mimic_icu_cohort) +
+  geom_point(mapping = aes(x = non_invasive_blood_pressure_diastolic, 
+                           y = los),
+             position = "jitter") +
+  labs(
+    title = "Distribution of ICU stay length by diastolic non-invasive blood pressure measurement",
+    x = "Diastolic Non-invasive Blood Pressure (mmHg)",
+    y = "ICU Stay Length (Fractional Days)"
+  ) + 
+  coord_cartesian(xlim = c(0, 225))
 ```
+The first plot shows several observations with extremely high diastolic non-invasive blood pressures (possibly due to recording errors?), which masks the variability in the distribution. The second plot ignores these observation, zooming into the distribution of diastolic non-invasive blood pressures between 0-225 mmHg. In the second plot, we can see that patients with diastolic non-invasive blood pressures between ~50-100 mmHg tend to have longer ICU stays, compared to patients with lower or higher blood pressures. 
 
 #### Respiratory Rate
 
 ```{r}
 ggplot(data = mimic_icu_cohort) +
-  geom_point(mapping = aes(x = respiratory_rate, y = los)) +
+  geom_point(mapping = aes(x = respiratory_rate, y = los),
+             position = "jitter") +
   labs(
     title = "Distribution of ICU stay length by respiratory rate measurement",
-    x = "Respiratory Rate ()",
+    x = "Respiratory Rate (insp/min)",
     y = "ICU Stay Length (Fractional Days)"
   ) 
 ```
+Patients with respiratory rates ~25 insp/min tend to have longer ICU stays, while patients with lower or higher respiratory rates tend to have shorter ICU stays. 
 
 #### Body Temperature
 
 ```{r}
 ggplot(data = mimic_icu_cohort) +
-  geom_point(mapping = aes(x = temperature_fahrenheit, y = los)) +
+  geom_point(mapping = aes(x = temperature_fahrenheit, y = los),
+             position = "jitter") +
   labs(
     title = "Distribution of ICU stay length by body temperature measurement",
     x = "Body Temperature (degrees Fahrenheit)",
     y = "ICU Stay Length (Fractional Days)"
   ) 
+
+ggplot(data = mimic_icu_cohort) +
+  geom_point(mapping = aes(x = temperature_fahrenheit, y = los),
+             position = "jitter") +
+  labs(
+    title = "Distribution of ICU stay length by body temperature measurement",
+    x = "Body Temperature (degrees Fahrenheit)",
+    y = "ICU Stay Length (Fractional Days)"
+  ) + 
+  coord_cartesian(xlim = c(0, 105))
 ```
+The first plot shows two observations with extremely high body temperatures (possibly due to recording errors?), which masks the variability in the distribution. The second plot ignores these observation, zooming into the distribution of diastolic non-invasive blood pressures between 0-105 degrees Fahrenheit. In the second plot, we can see that most observations are clustered around the average human body temperature, with the longest ICU stays observed for patients with body temperatures slightly below 100 degrees Fahrenheit. Unusually, there are observations with extremely low body temperatures as well. 
 
 :::
 
@@ -653,11 +725,12 @@ ggplot(data = mimic_icu_cohort) +
 **Answer:**
 ```{r}
 ggplot(data = mimic_icu_cohort) +
-  geom_boxplot(mapping = aes(x = first_careunit, y = los)) + 
+  geom_col(mapping = aes(x = first_careunit, y = los)) + 
   labs(
     title = "Distribution of ICU stay length by first ICU unit", 
     x = "First ICU Unit",
-    y = "ICU Stay Length (Fractional Days)"
+    y = "Total ICU Stay Length (Fractional Days)"
   ) + 
   coord_flip()
 ```
+Patients transferred to the Medical Intensive Care Unit (MICU) have the longest total ICU stay, followed by patients transferred to the Surgical Intensive Care Unit (SICU) and the Medical/Surgical Intensive Care Unit (MICU/SICU). Patients transferred to Neuro Stepdown have the shortest total ICU stay. 
