@@ -127,21 +127,21 @@ icustays_tble |>
 Without specifying unique values for `subject_id`, there are 73,181 total rows, which is more than the 50,920 rows from specifying unique values for `subject_id`. Thus, a `subject_id` can have multiple ICU stays. 
 
 ```{r}
-icustays_tble |>
+icustays_count <- icustays_tble |>
   group_by(subject_id) |>
   summarize(
     count = n()
   ) 
 
-ggplot(data = icustays_tble) +
-  geom_bar(mapping = aes(x = subject_id)) + 
+ggplot(data = icustays_count) +
+  geom_jitter(mapping = aes(x = subject_id, y = count)) + 
   labs(
     title = "Distribution of ICU stays by patient", 
     x = "Patient's Subject ID",
     y = "Count"
-  ) 
-#ERROR: graph not showing bars... too many subject ids?
+  )
 ```
+A majority of the patients have 10 or less ICU stays. Some patients have between 10-20 ICU stays, and a select few have 20+ ICU stays. 
 
 ## Q3. `admissions` data
 
@@ -168,15 +168,21 @@ Summarize the following information by graphics and explain any patterns you see
 
 **Answer:**
 ```{r}
-ggplot(data = admissions_tble) +
-  geom_bar(mapping = aes(x = subject_id)) + 
+admissions_count <- admissions_tble |>
+  group_by(subject_id) |>
+  summarize(
+    count = n()
+  ) 
+
+ggplot(data = admissions_count) +
+  geom_jitter(mapping = aes(x = subject_id, y = count)) + 
   labs(
     title = "Distribution of admissions by patient", 
     x = "Patient's Subject ID",
     y = "Count"
-  ) 
-#ERROR: graph not showing bars... too many subject ids?
+  )
 ```
+A majority of the patients have 50 or less admissions. Some patients have between 50-100 admissions, and a select few have 100+ admissions. 
 
 - admission hour (anything unusual?)  
 
@@ -218,7 +224,7 @@ ggplot(data = admissions_tble) +
     y = "Count"
   ) 
 ```
-Most hospital stays are relatively short, spanning a day to a few days. However, there do seem to be some hospital stays that are longer, spanning several days to weeks. The x axis of the graph extends to 300 days, indicating that there is an unusually long hospital stay that lasted around 300 days. 
+Yes, the x axis of the graph extends to 300 days, indicating that there is an unusually long hospital stay that lasted around 300 days. Most hospital stays are relatively short, spanning a day to a few days. However, there do seem to be some hospital stays that are longer, spanning several days to weeks.  
 
 According to the [MIMIC-IV documentation](https://mimic.mit.edu/docs/iv/about/concepts/#date-shifting), 
 
@@ -636,7 +642,8 @@ The first plot shows one observation with an extremely high heart rate (possibly
 
 ```{r}
 ggplot(data = mimic_icu_cohort) +
-  geom_point(mapping = aes(x = non_invasive_blood_pressure_systolic, y = los)) +
+  geom_point(mapping = aes(x = non_invasive_blood_pressure_systolic, 
+                           y = los)) +
   labs(
     title = "Distribution of ICU stay length by systolic non-invasive blood pressure measurement",
     x = "Systolic Non-invasive Blood Pressure (mmHg)",
@@ -644,7 +651,8 @@ ggplot(data = mimic_icu_cohort) +
   ) 
 
 ggplot(data = mimic_icu_cohort) +
-  geom_point(mapping = aes(x = non_invasive_blood_pressure_systolic, y = los)) +
+  geom_point(mapping = aes(x = non_invasive_blood_pressure_systolic, 
+                           y = los)) +
   labs(
     title = "Distribution of ICU stay length by systolic non-invasive blood pressure measurement",
     x = "Systolic Non-invasive Blood Pressure (mmHg)",
