@@ -51,31 +51,66 @@ Hint: We need to pull information from data files `patients.csv.gz`, `admissions
 
 **Answer:**
 ```{r}
-#| eval: false
-#read in data files
-patients_tble <- read_csv("~/mimic/hosp/patients.csv.gz")
-admissions_tble <- read_csv("~/mimic/hosp/admissions.csv.gz")
-transfers_tble <- read_csv("~/mimic/hosp/transfers.csv.gz")
-labevents_tble <- arrow::open_dataset("labevents_pq/part-0.parquet", 
-                                      format = "parquet") |> as_tibble()
-procedures_icd_tble <- read_csv("~/mimic/hosp/procedures_icd.csv.gz")
-diagnoses_icd_tble <- read_csv("~/mimic/hosp/diagnoses_icd.csv.gz")
-d_icd_procedures_tble <- read_csv("~/mimic/hosp/d_icd_procedures.csv.gz")
-d_icd_diagnoses_tble <- read_csv("~/mimic/hosp/d_icd_diagnoses.csv.gz")
-
-#define variables used in ggplot 
+#define subject id
 sid <- 10013310
-#gender <- "F"
-#patient_demo <- paste("Patient", sid, )
 
+#read in and manipulate data files 
+transfers_10013310 <- read_csv("~/mimic/hosp/transfers.csv.gz") |>
+  filter(subject_id == sid) 
+patients_10013310 <- read_csv("~/mimic/hosp/patients.csv.gz") |>
+  filter(subject_id == sid)
+admissions_10013310 <- read_csv("~/mimic/hosp/admissions.csv.gz") |>
+  filter(subject_id == sid) |>
+  slice_head()
+labevents_10013310 <- arrow::open_dataset("labevents_pq/part-0.parquet", 
+                                          format = "parquet") |> 
+  filter(subject_id == sid) |>
+  as_tibble()
+d_icd_procedures_tble <- read_csv("~/mimic/hosp/d_icd_procedures.csv.gz")
+procedures_icd_10013310 <- read_csv("~/mimic/hosp/procedures_icd.csv.gz") |>
+  filter(subject_id == sid) |>
+  mutate(chartdate = as.POSIXct(chartdate, format="%Y-%m-%d")) |>
+  left_join(d_icd_procedures_tble, by = c("icd_code", "icd_version"))
+d_icd_diagnoses_tble <- read_csv("~/mimic/hosp/d_icd_diagnoses.csv.gz")
+diagnoses_icd_10013310 <- read_csv("~/mimic/hosp/diagnoses_icd.csv.gz") |>
+  filter(subject_id == sid) |>
+  left_join(d_icd_diagnoses_tble, by = c("icd_code", "icd_version")) |>
+  group_by(hadm_id) |>
+  arrange(seq_num, .by_group = TRUE) |>
+  ungroup() |>
+  slice(1:3)
+
+#define title and subtitle
+my_title <- paste(c("Patient", sid, ",", print(patients_10013310$gender), ",", 
+                  print(patients_10013310$anchor_age), ",", 
+                  print(admissions_10013310$race)), collapse = " ")
+my_subtitle <- paste(print(diagnoses_icd_10013310$long_title), collapse = "\n")
+
+#plot graph
 ggplot() +
-  geom_segment(data = subset(transfers_tble, subject_id == sid),
-               aes(x = intime, xend = outtime, y = 0, yend = 0, 
-                   color = careunit)) +
-  labs(title = "Patient 10013310, F, 70 years old, Black/African",
-       x = "Calendar Time") +
+  geom_segment(data = transfers_10013310,
+               mapping = aes(
+                 x = intime, xend = outtime, 
+                 y = 0.025, yend = 0.025, 
+                 color = careunit),
+               linewidth = ifelse(grepl("ICU|CCU", transfers_10013310$careunit), 
+                             6, 2)) +
+  geom_point(data = labevents_10013310,
+             mapping = aes(x = charttime, y = 0),
+             shape = 3) +
+  geom_point(data = procedures_icd_10013310,
+             mapping = aes(x = chartdate, y = -0.025, shape = long_title)) +
+  scale_shape_manual(values = c(15, 16, 17, 3, 6, 7, 8, 10, 13)) +
+  labs(title = my_title,
+       subtitle = my_subtitle,
+       x = "Calendar Time",
+       y = " ") +
   theme_bw() + 
-  theme(legend.position = "bottom")
+  theme(legend.position = "bottom",
+        aspect.ratio = 1/4) +
+  scale_y_continuous(breaks = c(-0.025, 0, 0.025),
+                     labels = c("Procedure", "Lab", "ADT")) +
+  coord_cartesian(ylim = c(-0.04, 0.04))
 ```
 
 ### Q1.2 ICU stays
@@ -88,9 +123,41 @@ Do a similar visualization for the patient `10013310`.
 
 **Answer:**
 ```{r}
-#| eval: false
-ggplot(data = icustays_tble) +
-  geom_line(aes(x = ))
+#read in data files
+chartevents_10013310 <- arrow::open_dataset("chartevents_pq/part-0.parquet", 
+                                            format = "parquet") |>
+  filter(subject_id == sid) |>
+  as_tibble()
+icustays_10013310 <- read_csv("~/mimic/icu/icustays.csv.gz") |>
+  filter(subject_id == sid) |>
+  left_join(chartevents_10013310, 
+            by = c("subject_id", "hadm_id", "stay_id"), 
+            relationship = "many-to-many") |>
+  filter(itemid == 220045 | itemid == 220179 | itemid == 220180 | 
+           itemid == 223761 | itemid == 220210)
+
+#define title and labels 
+my_title2 <- paste(c("Patient", sid, "ICU stays - Vitals"), collapse = " ")
+ylabels <- c("220045" = "HR",
+             "220179" = "NBPs",
+             "220180" = "NBPd",
+             "220210" = "RR",
+             "223761" = "Temperature F")
+
+#plot graph
+ggplot(data = icustays_10013310,
+       mapping = aes(x = charttime, y = valuenum, color = factor(itemid))) +
+  geom_line(show.legend = FALSE) + 
+  geom_point(show.legend = FALSE) +
+  facet_grid(itemid ~ stay_id,
+             scales = "free",
+             labeller = labeller(itemid = as_labeller(ylabels))) +
+  labs(title = my_title2) +
+  theme_light() + 
+  theme(axis.title.x = element_blank(),
+        axis.title.y = element_blank()) +
+  scale_x_datetime(guide = guide_axis(n.dodge = 2)) +
+  scale_y_continuous(n.breaks = 4)
 ```
 
 ## Q2. ICU stays
