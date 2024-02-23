@@ -71,7 +71,7 @@ d_icd_procedures_tble <- read_csv("~/mimic/hosp/d_icd_procedures.csv.gz")
 procedures_icd_10013310 <- read_csv("~/mimic/hosp/procedures_icd.csv.gz") |>
   filter(subject_id == sid) |>
   #transform chartdate variable into POSIXct type 
-  mutate(chartdate = as.POSIXct(chartdate, format="%Y-%m-%d")) |>
+  mutate(chartdate = as.POSIXct(chartdate, format = "%Y-%m-%d")) |>
   #join procedures dictionary to obtain procedure titles later
   left_join(d_icd_procedures_tble, by = c("icd_code", "icd_version"))
 d_icd_diagnoses_tble <- read_csv("~/mimic/hosp/d_icd_diagnoses.csv.gz")
@@ -331,7 +331,7 @@ Yes, there is an unusually high number of admissions that occur at the 0 minute,
 **Answer:**
 ```{r}
 ggplot(data = admissions_tble) +
-  geom_bar(mapping = aes(x = (as.duration(admittime %--% dischtime)/86400))) + 
+  geom_bar(mapping = aes(x = (as.duration(admittime %--% dischtime) / 86400))) + 
   labs(
     title = "Distribution of hospital stay length", 
     x = "Hospital Stay Length (Days)",
@@ -434,7 +434,8 @@ labevents_tble <- left_join(icustays_subset, labevents_subset,
   group_by(subject_id, stay_id, itemid) |>
   #arrange data by span (shortest to longest) for each group
   arrange(span, .by_group = TRUE) |>
-  #select rows where lab measurements were taken before transfer to icu 
+  #select rows where lab measurements were taken before transfer to icu (when
+  #store time is before in time, span is negative)
   filter(span < 0) |>
   #for each group, select the last row (the most recent measurement before icu 
   #stay)
@@ -491,8 +492,8 @@ chartevents_subset <- arrow::open_dataset("chartevents_pq/part-0.parquet",
 
 #join subsets of icu stays and chart events together by subject id and stay id
 chartevents_tble <- left_join(chartevents_subset, icustays_subset, 
-                                  by = c("subject_id", "stay_id"), 
-                                  relationship = "many-to-many") |> 
+                              by = c("subject_id", "stay_id"), 
+                              relationship = "many-to-many") |> 
   #calculate the duration between chart time and in time in new column span
   mutate(span = as.duration(charttime - intime)) |>
   #group data by subject id, then stay id, then item id
