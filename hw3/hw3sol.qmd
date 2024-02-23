@@ -54,13 +54,14 @@ Hint: We need to pull information from data files `patients.csv.gz`, `admissions
 #define subject id
 sid <- 10013310
 
-#read in and manipulate data files 
+#read in data files and filter rows for patient 10013310
 transfers_10013310 <- read_csv("~/mimic/hosp/transfers.csv.gz") |>
   filter(subject_id == sid) 
 patients_10013310 <- read_csv("~/mimic/hosp/patients.csv.gz") |>
   filter(subject_id == sid)
 admissions_10013310 <- read_csv("~/mimic/hosp/admissions.csv.gz") |>
   filter(subject_id == sid) |>
+  #select first row since only need demographic information from this file
   slice_head()
 labevents_10013310 <- arrow::open_dataset("labevents_pq/part-0.parquet", 
                                           format = "parquet") |> 
@@ -69,15 +70,22 @@ labevents_10013310 <- arrow::open_dataset("labevents_pq/part-0.parquet",
 d_icd_procedures_tble <- read_csv("~/mimic/hosp/d_icd_procedures.csv.gz")
 procedures_icd_10013310 <- read_csv("~/mimic/hosp/procedures_icd.csv.gz") |>
   filter(subject_id == sid) |>
+  #transform chartdate variable into POSIXct type 
   mutate(chartdate = as.POSIXct(chartdate, format="%Y-%m-%d")) |>
+  #join procedures dictionary to obtain procedure titles later
   left_join(d_icd_procedures_tble, by = c("icd_code", "icd_version"))
 d_icd_diagnoses_tble <- read_csv("~/mimic/hosp/d_icd_diagnoses.csv.gz")
 diagnoses_icd_10013310 <- read_csv("~/mimic/hosp/diagnoses_icd.csv.gz") |>
   filter(subject_id == sid) |>
+  #join diagnoses dictionary to obtain diagnoses titles later
   left_join(d_icd_diagnoses_tble, by = c("icd_code", "icd_version")) |>
+  #group by each admission
   group_by(hadm_id) |>
+  #arrange diagnoses in order for each admission
   arrange(seq_num, .by_group = TRUE) |>
+  #remove grouping
   ungroup() |>
+  #select rows with the first three diagnoses during the first admission
   slice(1:3)
 
 #define title and subtitle
@@ -88,30 +96,59 @@ my_subtitle <- paste(print(diagnoses_icd_10013310$long_title), collapse = "\n")
 
 #plot graph
 ggplot() +
+  #plot segment for ADT events 
   geom_segment(data = transfers_10013310,
                mapping = aes(
+                 #plot transfer times on x axis 
                  x = intime, xend = outtime, 
+                 #picked a random y value to place segment on 
                  y = 0.025, yend = 0.025, 
+                 #set color according to care unit 
                  color = careunit),
+               #set line width as 6 if care unit was ICU or CCU, and 2 else
                linewidth = ifelse(grepl("ICU|CCU", transfers_10013310$careunit), 
                              6, 2)) +
+  #add new layer, plot points for lab events 
   geom_point(data = labevents_10013310,
+             #plot chart time on x axis, picked y value less than y value for
+             #ADT events
              mapping = aes(x = charttime, y = 0),
+             #set point shape as crosses
              shape = 3) +
+  #add new layer, plot points for procedure events 
   geom_point(data = procedures_icd_10013310,
+             #plot chart date on x axis, picked y value less than y value for 
+             #lab events, set shape according to procedure title
              mapping = aes(x = chartdate, y = -0.025, shape = long_title)) +
+  #select shapes for each procedure (since default only provides 6)
   scale_shape_manual(values = c(15, 16, 17, 3, 6, 7, 8, 10, 13)) +
+  #add title, subtitle, and axis/legend titles
   labs(title = my_title,
        subtitle = my_subtitle,
        x = "Calendar Time",
-       y = " ") +
+       y = " ",
+       shape = "Procedure",
+       color = "Care Unit") +
+  #set background to white
   theme_bw() + 
+  #place legend at bottom of plot, adjust legend size to fit in plot, adjust 
+  #aspect ratio to make plot wider 
   theme(legend.position = "bottom",
+        legend.text = element_text(size = 5, vjust = 0.5), 
+        legend.key.width = unit(0.1, "cm"),
+        legend.key.size = unit(0.3, "cm"),
+        legend.spacing = unit(0.05, "cm"), 
         aspect.ratio = 1/4) +
+  #adjust legend columns and rows to fit plot
+  guides(shape = guide_legend(ncol = 1, nrow = 9),
+         color = guide_legend(ncol = 1, nrow = 7)) +
+  #set labels for type of event on y axis 
   scale_y_continuous(breaks = c(-0.025, 0, 0.025),
                      labels = c("Procedure", "Lab", "ADT")) +
-  coord_cartesian(ylim = c(-0.04, 0.04))
+  #set y axis limits for the plot
+  coord_cartesian(ylim = c(-0.04, 0.04)) 
 ```
+Above is my visualization for patient 10013310, with the codes and documentation. For the top 3 diagnoses, I selected the top 3 diagnoses from the first hospital admission. For lab events, I used `charttime` instead of `storetime` to document the timing of lab events. According to this plot, this patient has been at the ICU/CCU twice over the course of their hospital stays during May to July. They have had multiple lab events and several procedures throughout their stays. 
 
 ### Q1.2 ICU stays
 
@@ -123,18 +160,19 @@ Do a similar visualization for the patient `10013310`.
 
 **Answer:**
 ```{r}
-#read in data files
+#read in data files and filter rows for patient 10013310
 chartevents_10013310 <- arrow::open_dataset("chartevents_pq/part-0.parquet", 
                                             format = "parquet") |>
   filter(subject_id == sid) |>
   as_tibble()
 icustays_10013310 <- read_csv("~/mimic/icu/icustays.csv.gz") |>
   filter(subject_id == sid) |>
+  #join icu stays with chart events by subject id, hadm id, and stay id
   left_join(chartevents_10013310, 
             by = c("subject_id", "hadm_id", "stay_id"), 
             relationship = "many-to-many") |>
-  filter(itemid == 220045 | itemid == 220179 | itemid == 220180 | 
-           itemid == 223761 | itemid == 220210)
+  #filter by vitals that we are interested in
+  filter(itemid %in% c(220045, 220179, 220180, 223761, 220210))
 
 #define title and labels 
 my_title2 <- paste(c("Patient", sid, "ICU stays - Vitals"), collapse = " ")
@@ -146,19 +184,32 @@ ylabels <- c("220045" = "HR",
 
 #plot graph
 ggplot(data = icustays_10013310,
+       #plot chart time on x axis, measurement value on y axis, set color 
+       #according to vital
        mapping = aes(x = charttime, y = valuenum, color = factor(itemid))) +
+  #add lines, don't show legend
   geom_line(show.legend = FALSE) + 
+  #add points, don't show legend
   geom_point(show.legend = FALSE) +
+  #form panels based on vitals and icu stay
   facet_grid(itemid ~ stay_id,
+             #allow scales to vary across vitals and icu stay
              scales = "free",
+             #set vital labels according to previously defined labels 
              labeller = labeller(itemid = as_labeller(ylabels))) +
+  #add title 
   labs(title = my_title2) +
+  #set background to light 
   theme_light() + 
+  #remove axis titles 
   theme(axis.title.x = element_blank(),
         axis.title.y = element_blank()) +
+  #include more space between x axis text
   scale_x_datetime(guide = guide_axis(n.dodge = 2)) +
+  #set y axis breaks 
   scale_y_continuous(n.breaks = 4)
 ```
+Above is my visualization for patient 10013310, with the codes and documentation. According to this plot, this patient stayed at the ICU twice, once during early May and again during mid June. Their second stay was much longer than the first stay. They had a lot more vital measurements taken during their second stay, with a lot of variability in the measurements. It looks like they also had high heart rates and a body temperature reaching 103 F at one point during the second stay, perhaps indicating a more severe health condition than the first  stay. 
 
 ## Q2. ICU stays
 
@@ -171,6 +222,7 @@ zcat < ~/mimic/icu/icustays.csv.gz | head
 
 Import `icustays.csv.gz` as a tibble `icustays_tble`. 
 
+**Answer:**
 ```{r}
 icustays_tble <- read_csv("~/mimic/icu/icustays.csv.gz") |>
   print()
@@ -180,6 +232,7 @@ icustays_tble <- read_csv("~/mimic/icu/icustays.csv.gz") |>
 
 How many unique `subject_id`? Can a `subject_id` have multiple ICU stays? Summarize the number of ICU stays per `subject_id` by graphs. 
 
+**Answer:**
 ```{r}
 icustays_tble |>
   distinct(subject_id) |>
@@ -194,21 +247,18 @@ icustays_tble |>
 Without specifying unique values for `subject_id`, there are 73,181 total rows, which is more than the 50,920 rows from specifying unique values for `subject_id`. Thus, a `subject_id` can have multiple ICU stays. 
 
 ```{r}
-icustays_count <- icustays_tble |>
+icustays_tble |>
   group_by(subject_id) |>
-  summarize(
-    count = n()
-  ) 
-
-ggplot(data = icustays_count) +
-  geom_jitter(mapping = aes(x = subject_id, y = count)) + 
+  summarize(count = n()) |>
+  ggplot() +
+  geom_bar(mapping = aes(x = count)) +
   labs(
-    title = "Distribution of ICU stays by patient", 
-    x = "Patient's Subject ID",
+    title = "Distribution of ICU stays of patients", 
+    x = "# of ICU Stays",
     y = "Count"
   )
 ```
-A majority of the patients have 10 or less ICU stays. Some patients have between 10-20 ICU stays, and a select few have 20+ ICU stays. 
+A majority of the patients have only one ICU stay. Some patients have 2-5 ICU stays, and a select few have 5+ ICU stays. The maximum number of ICU stays by a patient is ~30-40 ICU stays. 
 
 ## Q3. `admissions` data
 
@@ -235,21 +285,18 @@ Summarize the following information by graphics and explain any patterns you see
 
 **Answer:**
 ```{r}
-admissions_count <- admissions_tble |>
+admissions_tble |>
   group_by(subject_id) |>
-  summarize(
-    count = n()
-  ) 
-
-ggplot(data = admissions_count) +
-  geom_jitter(mapping = aes(x = subject_id, y = count)) + 
+  summarize(count = n()) |>
+  ggplot() +
+  geom_bar(mapping = aes(x = count)) +
   labs(
-    title = "Distribution of admissions by patient", 
-    x = "Patient's Subject ID",
+    title = "Distribution of admissions of patients", 
+    x = "# of Admissions",
     y = "Count"
   )
 ```
-A majority of the patients have 50 or less admissions. Some patients have between 50-100 admissions, and a select few have 100+ admissions. 
+A majority of the patients have only a couple of admissions. Some patients have more than a couple of admissions, and a select few have multiple admissions. The maximum number of admissions by a patient is ~200-250 admissions. 
 
 - admission hour (anything unusual?)  
 
@@ -277,7 +324,7 @@ ggplot(data = admissions_tble) +
     y = "Count"
   ) 
 ```
-Yes, there is an unusually high number of admissions that occur at the 0 minute, 15 minute, 30 minute, and 45 minute. This could be due a tendency of healthcare workers to round to the nearest quarter of the hour when recording the admission time. Aside from these unusual minutes, all other minutes have similar numbers of admissions. 
+Yes, there is an unusually high number of admissions that occur at the 0 minute, 15 minute, 30 minute, and 45 minute. This could be due workers rounding to the nearest quarter of the hour when recording the admission time. Aside from these unusual minutes, all other minutes have similar numbers of admissions. 
 
 - length of hospital stay (from admission to discharge) (anything unusual?)  
 
@@ -321,7 +368,7 @@ Summarize variables `gender` and `anchor_age` by graphics, and explain any patte
 **Answer:**
 ```{r}
 ggplot(data = patients_tble) +
-  geom_violin(mapping = aes(x = gender, y = anchor_age)) + 
+  geom_boxplot(mapping = aes(x = gender, y = anchor_age)) + 
   labs(
     title = "Distribution of patient age by patient gender", 
     x = "Gender",
@@ -329,7 +376,8 @@ ggplot(data = patients_tble) +
   ) 
 
 ggplot(data = patients_tble) +
-  geom_histogram(binwidth = 2, mapping = aes(x = anchor_age, fill = gender),
+  geom_histogram(binwidth = 2, 
+                 mapping = aes(x = anchor_age, fill = gender),
                  position = "dodge") + 
   labs(
     title = "Distribution of patient age by patient gender",
@@ -338,7 +386,7 @@ ggplot(data = patients_tble) +
     fill = "Gender"
   ) 
 ```
-In general, there is a larger share of young adult patients compared to adult and elderly patients, for both genders. This observation is surprising, as we would assume the opposite with more elderly patients and less young adult patients. However, the oldest elderly patients seem to make up a sizable share of the total patients, likely due to worsening health conditions. Across young adult and elderly patients, there is a larger share of female patients, while across adult patients, there is a larger share of male patients. This could be due to multiple factors or a combination of factors, e.g. women may be more likely to seek out medical care or come in more often for female-specific health conditions that are critical at younger and older ages. 
+The median age of male patients is slightly higher than the median age of female patients. In general, there is a larger share of young adult patients compared to adult and elderly patients, for both genders. This observation is surprising, as we would assume the opposite with more elderly patients and less young adult patients. However, the oldest elderly patients seem to make up a sizable share of the total patients, likely due to worsening health conditions. Across young adult and elderly patients, there is a larger share of female patients, while across older adult patients, there is a larger share of male patients. This could be due to multiple factors or a combination of factors, e.g. women may be more likely to seek out medical care or come in more often for female-specific health conditions that are critical at younger and older ages. 
 
 ## Q5. Lab results
 
@@ -360,25 +408,42 @@ Hint: Use the Parquet format you generated in Homework 2. For reproducibility, m
 
 **Answer:**
 ```{r}
+#read in lab events data file 
 labevents_subset <- arrow::open_dataset("labevents_pq/part-0.parquet", 
-                                      format = "parquet") |>
+                                        format = "parquet") |>
+  #select necessary columns
   select(subject_id, itemid, storetime, valuenum) |>
-  filter(itemid == 50912 | itemid == 50971 | itemid == 50983 | itemid == 50902 |
-           itemid == 50882 | itemid == 51221 | itemid == 51301 | 
-           itemid == 50931) |>
+  #filter by lab measurements we are interested in 
+  filter(itemid %in% c(50912, 50971, 50983, 50902, 
+                       50882, 51221, 51301, 50931)) |>
+  #turn data into a tibble
   as_tibble()
+
+#create a subset of icu stays tibble 
 icustays_subset <- icustays_tble |> 
+  #select necessary columns
   select(subject_id, stay_id, intime)
+
+#join subsets of icu stays and lab events together by subject id
 labevents_tble <- left_join(icustays_subset, labevents_subset, 
                             by = "subject_id", 
                             relationship = "many-to-many") |>
+  #calculate the duration between store time and in time in new column span
   mutate(span = as.duration(storetime - intime)) |> 
+  #group data by subject id, then stay id, then item id
   group_by(subject_id, stay_id, itemid) |>
+  #arrange data by span (shortest to longest) for each group
   arrange(span, .by_group = TRUE) |>
+  #select rows where lab measurements were taken before transfer to icu 
   filter(span < 0) |>
+  #for each group, select the last row (the most recent measurement before icu 
+  #stay)
   slice_tail() |>
+  #remove columns that are no longer needed 
   select(-c(intime, storetime, span)) |>
+  #turn data into wide format 
   pivot_wider(names_from = itemid, values_from = valuenum) |>
+  #rename columns based on correct lab measurement name 
   rename(
     creatinine = "50912",
     potassium = "50971",
@@ -389,6 +454,7 @@ labevents_tble <- left_join(icustays_subset, labevents_subset,
     wbc = "51301",
     glucose = "50931"
   ) |>
+  #remove grouping 
   ungroup() |>
   print()
 ```
@@ -413,23 +479,34 @@ Hint: Use the Parquet format you generated in Homework 2. For reproducibility, m
 
 **Answer:**
 ```{r}
+#read in chart events data file
 chartevents_subset <- arrow::open_dataset("chartevents_pq/part-0.parquet", 
-                                      format = "parquet") |>
+                                          format = "parquet") |>
+  #select necessary columns
   select(subject_id, stay_id, charttime, itemid, valuenum) |>
-  filter(itemid == 220045 | itemid == 220179 | itemid == 220180 | 
-           itemid == 223761 | itemid == 220210) |>
+  #filter by vitals we are interested in
+  filter(itemid %in% c(220045, 220179, 220180, 223761, 220210)) |>
+  #turn data into a tibble
   as_tibble()
-icustays_subset <- icustays_tble |> 
-  select(subject_id, stay_id, intime)
+
+#join subsets of icu stays and chart events together by subject id and stay id
 chartevents_tble <- left_join(chartevents_subset, icustays_subset, 
                                   by = c("subject_id", "stay_id"), 
                                   relationship = "many-to-many") |> 
+  #calculate the duration between chart time and in time in new column span
   mutate(span = as.duration(charttime - intime)) |>
+  #group data by subject id, then stay id, then item id
   group_by(subject_id, stay_id, itemid) |>
+  #arrange data by span (shortest to longest) for each group
   arrange(span, .by_group = TRUE) |>
+  #for each group, select the first row (the first vital measurement in icu
+  #stay)
   slice_head() |> 
+  #remove columns that are no longer needed 
   select(-c(intime, charttime, span)) |>
+  #turn data into wide format
   pivot_wider(names_from = itemid, values_from = valuenum) |>
+  #rename columns based on correct vital name
   rename(
     heart_rate = "220045",
     non_invasive_blood_pressure_systolic = "220179",
@@ -437,9 +514,9 @@ chartevents_tble <- left_join(chartevents_subset, icustays_subset,
     temperature_fahrenheit = "223761",
     respiratory_rate = "220210"
   ) |> 
+  #remove grouping
   ungroup() |>
   print()
-#row 6, respiratory rate has diff value from photo
 ```
 
 ## Q7. Putting things together
@@ -458,19 +535,26 @@ The final `mimic_icu_cohort` should have one row per ICU stay and columns for ea
 
 **Answer:**
 ```{r}
+#join icu stays and admissions tibbles together by subject id and hadm id
 mimic_icu_cohort <- left_join(icustays_tble, admissions_tble, 
                               by = c("subject_id", "hadm_id")) |>
+  #join patients tibble to the previous join by subject id
   left_join(patients_tble, by = "subject_id") |>
+  #join lab events tibble to the previous join by subject id and stay id
   left_join(labevents_tble, by = c("subject_id", "stay_id")) |>
+  #join chart events tibble to the previous join by subject id and stay id
   left_join(chartevents_tble, by = c("subject_id", "stay_id")) |>
+  #extract year from in time, calculate difference between in time year and 
+  #anchor year, add the difference onto anchor age to find age at in time 
   mutate(intime_year = year(intime),
          year_diff = intime_year - anchor_year,
          intime_age = anchor_age + year_diff) |>
+  #filter by rows where patient's age at in time is 18 years or older
   filter(intime_age >= 18) |>
+  #remove columns that are no longer needed
   select(-c(intime_year, year_diff)) |>
   print()
 ```
-Above is my final `mimic_icu_cohort`. The number of rows in my cohort (73,181) does not exactly match the number of rows in the picture (73,097), which is because I filtered the age at intime by >= 18 as the instructions requested. However, when I tested out filtering the age at intime by > 18, the number of rows was 73,097, which matched the picture. I kept the filter as age at intime >= 18 to comply with the instructions. 
 
 ## Q8. Exploratory data analysis (EDA)
 
@@ -485,22 +569,30 @@ Summarize the following information about the ICU stay cohort `mimic_icu_cohort`
 #### Race
 
 ```{r}
-ggplot(data = mimic_icu_cohort) +
-  geom_col(mapping = aes(x = race, y = los)) + 
+mimic_icu_cohort |>
+  group_by(race) |>
+  summarize(total_los = sum(los)) |>
+  ggplot() +
+  geom_col(mapping = aes(x = fct_reorder(as.factor(race), total_los), 
+                         y = total_los)) +
   labs(
     title = "Distribution of ICU stay length by patient race", 
     x = "Race",
     y = "Total ICU Stay Length (Fractional Days)"
-  ) + 
-  coord_flip() 
+  ) +
+  coord_flip()
 ```
-White patients have the longest total ICU stay, followed by patients with an unknown race and Black/African American patients. 
+White patients have the longest total ICU stay, followed by patients with an unknown race and Black/African American patients. Hispanic/Latino Central American patients have the shortest total ICU stay. 
 
 #### Insurance
 
 ```{r}
-ggplot(data = mimic_icu_cohort) +
-  geom_col(mapping = aes(x = insurance, y = los)) + 
+mimic_icu_cohort |>
+  group_by(insurance) |>
+  summarize(total_los = sum(los)) |>
+  ggplot() +
+  geom_col(mapping = aes(x = fct_reorder(as.factor(insurance), total_los), 
+                         y = total_los)) +
   labs(
     title = "Distribution of ICU stay length by patient's insurance", 
     x = "Insurance",
@@ -513,13 +605,17 @@ Patients with insurance other than Medicare and Medicaid have the longest total 
 #### Marital Status
 
 ```{r}
-ggplot(data = mimic_icu_cohort) +
-  geom_col(mapping = aes(x = marital_status, y = los)) + 
+mimic_icu_cohort |>
+  group_by(marital_status) |>
+  summarize(total_los = sum(los)) |>
+  ggplot() +
+  geom_col(mapping = aes(x = fct_reorder(as.factor(marital_status), total_los), 
+                         y = total_los)) +
   labs(
     title = "Distribution of ICU stay length by patient's marital status", 
     x = "Marital Status",
     y = "Total ICU Stay Length (Fractional Days)"
-  ) + 
+  ) +
   coord_flip()
 ```
 Married patients have the longest total ICU stay, followed by single patients. Compared to married or single patients, widowed and divorced patients as well as patients with missing marital status data have shorter total ICU stays.  
@@ -527,13 +623,17 @@ Married patients have the longest total ICU stay, followed by single patients. C
 #### Gender
 
 ```{r}
-ggplot(data = mimic_icu_cohort) +
-  geom_col(mapping = aes(x = gender, y = los)) + 
+mimic_icu_cohort |>
+  group_by(gender) |>
+  summarize(total_los = sum(los)) |>
+  ggplot() +
+  geom_col(mapping = aes(x = fct_reorder(as.factor(gender), total_los), 
+                         y = total_los)) +
   labs(
     title = "Distribution of ICU stay length by patient gender", 
     x = "Gender",
     y = "Total ICU Stay Length (Fractional Days)"
-  ) + 
+  ) +
   coord_flip()
 ```
 Male patients have a longer total ICU stay, compared to female patients. 
@@ -541,17 +641,18 @@ Male patients have a longer total ICU stay, compared to female patients.
 #### Age
 
 ```{r}
-ggplot(data = mimic_icu_cohort) +
-  geom_point(mapping = aes(x = intime_age, y = los), 
-             position = "jitter") +
+mimic_icu_cohort |>
+  group_by(intime_age) |>
+  summarize(total_los = sum(los)) |>
+  ggplot() +
+  geom_col(mapping = aes(x = intime_age, y = total_los)) +
   labs(
     title = "Distribution of ICU stay length by patient age", 
-    caption = "Patient age at time of transfer to ICU.",
     x = "Age",
-    y = "ICU Stay Length (Fractional Days)"
+    y = "Total ICU Stay Length (Fractional Days)"
   ) 
 ```
-Across all ages, most ICU stays tend to be 30 days or less, though there are some patients with ICU stays longer than 30 days. Generally, the youngest and oldest patients tend to have shorter ICU stays, while a larger share of adults aged 50-90 years tend to have longer ICU stays. 
+Young adult patients have shorter total ICU stays. The oldest elderly patients also have shorter total ICU stays, which could be due to fewer patients who live up to these ages. Adults aged 50-90 years tend to have longer total ICU stays, due to declining health with older age. 
 
 :::
 
@@ -564,118 +665,134 @@ Across all ages, most ICU stays tend to be 30 days or less, though there are som
 #### Bicarbonate
 
 ```{r}
-ggplot(data = mimic_icu_cohort) +
-  geom_point(mapping = aes(x = bicarbonate, y = los),
-             position = "jitter") +
+mimic_icu_cohort |>
+  group_by(bicarbonate) |>
+  summarize(total_los = sum(los)) |>
+  ggplot() +
+  geom_col(mapping = aes(x = bicarbonate, y = total_los)) +
   labs(
-    title = "Distribution of ICU stay length by bicarbonate measurement",
+    title = "Distribution of ICU stay length by bicarbonate measurement", 
     x = "Bicarbonate (mEq/L)",
-    y = "ICU Stay Length (Fractional Days)"
+    y = "Total ICU Stay Length (Fractional Days)"
   ) 
 ```
-Patients with bicarbonate levels between ~20-30 mEq/L measured right before their ICU stay tend to have longer ICU stays, while patients with very low or very high bicarbonate levels tend to have shorter ICU stays. 
+Patients with bicarbonate levels between ~20-30 mEq/L measured right before their ICU stay have  longer total ICU stays, while patients with very low or very high bicarbonate levels have shorter total ICU stays. 
 
 #### Chloride
 
 ```{r}
-ggplot(data = mimic_icu_cohort) +
-  geom_point(mapping = aes(x = chloride, y = los),
-             position = "jitter") +
+mimic_icu_cohort |>
+  group_by(chloride) |>
+  summarize(total_los = sum(los)) |>
+  ggplot() +
+  geom_col(mapping = aes(x = chloride, y = total_los)) +
   labs(
-    title = "Distribution of ICU stay length by chloride measurement",
+    title = "Distribution of ICU stay length by chloride measurement", 
     x = "Chloride (mEq/L)",
-    y = "ICU Stay Length (Fractional Days)"
+    y = "Total ICU Stay Length (Fractional Days)"
   ) 
 ```
-Patients with chloride levels ~100 mEq/L tend to have the longest ICU stays, while patients with very low or very high chloride levels tend to have shorter ICU stays. 
+Patients with chloride levels ~100 mEq/L have the longest total ICU stays, while patients with very low or very high chloride levels have shorter total ICU stays. 
 
 #### Creatinine
 
 ```{r}
-ggplot(data = mimic_icu_cohort) +
-  geom_point(mapping = aes(x = creatinine, y = los),
-             position = "jitter") +
+mimic_icu_cohort |>
+  group_by(creatinine) |>
+  summarize(total_los = sum(los)) |>
+  ggplot() +
+  geom_col(mapping = aes(x = creatinine, y = total_los)) +
   labs(
-    title = "Distribution of ICU stay length by creatinine measurement",
+    title = "Distribution of ICU stay length by creatinine measurement", 
     x = "Creatinine (mg/dL)",
-    y = "ICU Stay Length (Fractional Days)"
+    y = "Total ICU Stay Length (Fractional Days)"
   ) 
 ```
-Patients with very low creatinine levels tend to have longer ICU stays, while patients with higher creatinine levels tend to have shorter ICU stays. 
+Patients with very low creatinine levels have longer total ICU stays, while patients with higher creatinine levels have shorter total ICU stays. 
 
 #### Glucose
 
 ```{r}
-ggplot(data = mimic_icu_cohort) +
-  geom_point(mapping = aes(x = glucose, y = los),
-             position = "jitter") +
+mimic_icu_cohort |>
+  group_by(glucose) |>
+  summarize(total_los = sum(los)) |>
+  ggplot() +
+  geom_col(mapping = aes(x = glucose, y = total_los)) +
   labs(
-    title = "Distribution of ICU stay length by glucose measurement",
+    title = "Distribution of ICU stay length by glucose measurement", 
     x = "Glucose (mg/dL)",
-    y = "ICU Stay Length (Fractional Days)"
+    y = "Total ICU Stay Length (Fractional Days)"
   ) 
 ```
-Patients with low glucose levels tend to have longer ICU stays, while patients with higher glucose levels tend to have shorter ICU stays. 
+Patients with low glucose levels have longer total ICU stays, while patients with higher glucose levels have shorter total ICU stays. 
 
 #### Potassium
 
 ```{r}
-ggplot(data = mimic_icu_cohort) +
-  geom_point(mapping = aes(x = potassium, y = los),
-             position = "jitter") +
+mimic_icu_cohort |>
+  group_by(potassium) |>
+  summarize(total_los = sum(los)) |>
+  ggplot() +
+  geom_col(mapping = aes(x = potassium, y = total_los)) +
   labs(
-    title = "Distribution of ICU stay length by potassium measurement",
+    title = "Distribution of ICU stay length by potassium measurement", 
     x = "Potassium (mEq/L)",
-    y = "ICU Stay Length (Fractional Days)"
+    y = "Total ICU Stay Length (Fractional Days)"
   ) 
 ```
-Patients with potassium levels between ~3-6 mEq/L tend to have longer ICU stays, while patients with very low or very high potassium levels tend to have shorter ICU stays. 
+Patients with potassium levels ~4 mEq/L have the longest total ICU stays, while patients with lower or higher potassium levels have shorter total ICU stays. 
 
 #### Sodium
 
 ```{r}
-ggplot(data = mimic_icu_cohort) +
-  geom_point(mapping = aes(x = sodium, y = los),
-             position = "jitter") +
+mimic_icu_cohort |>
+  group_by(sodium) |>
+  summarize(total_los = sum(los)) |>
+  ggplot() +
+  geom_col(mapping = aes(x = sodium, y = total_los)) +
   labs(
-    title = "Distribution of ICU stay length by sodium measurement",
+    title = "Distribution of ICU stay length by sodium measurement", 
     x = "Sodium (mEq/L)",
-    y = "ICU Stay Length (Fractional Days)"
+    y = "Total ICU Stay Length (Fractional Days)"
   ) 
 ```
-Patients with sodium levels between ~125-150 mEq/L tend to have longer ICU stays, while patients with lower and higher sodium levels tend to have shorter ICU stays. 
+Patients with sodium levels ~140 mEq/L have the longest total ICU stays, while patients with lower and higher sodium levels have shorter total ICU stays. 
 
 #### Hematocrit
 
 ```{r}
-ggplot(data = mimic_icu_cohort) +
-  geom_point(mapping = aes(x = hematocrit, y = los),
-             position = "jitter") +
+mimic_icu_cohort |>
+  group_by(hematocrit) |>
+  summarize(total_los = sum(los)) |>
+  ggplot() +
+  geom_col(mapping = aes(x = hematocrit, y = total_los)) +
   labs(
-    title = "Distribution of ICU stay length by hematocrit measurement",
+    title = "Distribution of ICU stay length by hematocrit measurement", 
     x = "Hematocrit (%)",
-    y = "ICU Stay Length (Fractional Days)"
+    y = "Total ICU Stay Length (Fractional Days)"
   ) 
 ```
-Patients with hematocrit levels between ~25-45% tend to longer ICU stays, while patients with lower and higher hematocrit levels tend to have shorter ICU stays. 
+Patients with hematocrit levels between ~30-45% have longer total ICU stays, while patients with lower and higher hematocrit levels have shorter total ICU stays. 
 
 #### White Blood Cell
 
 ```{r}
-ggplot(data = mimic_icu_cohort) +
-  geom_point(mapping = aes(x = wbc, y = los),
-             position = "jitter") +
+mimic_icu_cohort |>
+  group_by(wbc) |>
+  summarize(total_los = sum(los)) |>
+  ggplot() +
+  geom_col(mapping = aes(x = wbc, y = total_los)) +
   labs(
-    title = "Distribution of ICU stay length by white blood cell count",
+    title = "Distribution of ICU stay length by white blood cell count", 
     x = "White Blood Cell Count",
-    y = "ICU Stay Length (Fractional Days)"
+    y = "Total ICU Stay Length (Fractional Days)"
   ) 
 ```
-Patients with very low white blood cell counts tend to have longer ICU stays, while patients with higher white blood cell counts tend to have shorter ICU stays. 
+Patients with very low white blood cell counts have longer total ICU stays, while patients with higher white blood cell counts have shorter total ICU stays. 
 
 :::
 
-- Length of ICU stay `los` vs the average vital measurements within the first hour of ICU stay
+- Length of ICU stay `los` vs the first vital measurements within the ICU stay
 
 **Answer:**
 
@@ -688,46 +805,52 @@ ggplot(data = mimic_icu_cohort) +
   geom_point(mapping = aes(x = heart_rate, y = los),
              position = "jitter") +
   labs(
-    title = "Distribution of ICU stay length by heart rate measurement",
+    title = "Distribution of ICU stay length by heart rate",
     x = "Heart Rate (bpm)",
     y = "ICU Stay Length (Fractional Days)"
   )
 
-ggplot(data = mimic_icu_cohort) +
-  geom_point(mapping = aes(x = heart_rate, y = los),
-             position = "jitter") +
+mimic_icu_cohort |>
+  group_by(heart_rate) |>
+  summarize(total_los = sum(los)) |>
+  ggplot() +
+  geom_col(mapping = aes(x = heart_rate, y = total_los)) +
   labs(
-    title = "Distribution of ICU stay length by heart rate measurement",
+    title = "Distribution of ICU stay length by heart rate", 
     x = "Heart Rate (bpm)",
-    y = "ICU Stay Length (Fractional Days)"
+    y = "Total ICU Stay Length (Fractional Days)"
   ) + 
   coord_cartesian(xlim = c(0, 250))
 ```
-The first plot shows one observation with an extremely high heart rate (possibly due to a recording error?), which masks the variability in the distribution. The second plot ignores this observation, zooming into the distribution of heart rates between 0-250 bpm. In the second plot, we can see that patients with heart rates between ~75-125 bpm tend to have longer ICU stays, compared to patients with lower or higher heart rates. 
+The first plot shows one observation with an extremely high heart rate (possibly due to a recording error?), which masks the variability in the distribution. The second plot ignores this observation, zooming into the distribution of heart rates between 0-250 bpm. In the second plot, we can see that patients with heart rates between ~75-100 bpm have the longest total ICU stays, compared to patients with lower or higher heart rates. 
 
 #### Systolic Non-invasive Blood Pressure
 
 ```{r}
 ggplot(data = mimic_icu_cohort) +
   geom_point(mapping = aes(x = non_invasive_blood_pressure_systolic, 
-                           y = los)) +
+                           y = los),
+             position = "jitter") +
   labs(
-    title = "Distribution of ICU stay length by systolic non-invasive blood pressure measurement",
+    title = "Distribution of ICU stay length by systolic non-invasive blood pressure",
     x = "Systolic Non-invasive Blood Pressure (mmHg)",
     y = "ICU Stay Length (Fractional Days)"
   ) 
 
-ggplot(data = mimic_icu_cohort) +
-  geom_point(mapping = aes(x = non_invasive_blood_pressure_systolic, 
-                           y = los)) +
+mimic_icu_cohort |>
+  group_by(non_invasive_blood_pressure_systolic) |>
+  summarize(total_los = sum(los)) |>
+  ggplot() +
+  geom_col(mapping = aes(x = non_invasive_blood_pressure_systolic, 
+                         y = total_los)) +
   labs(
-    title = "Distribution of ICU stay length by systolic non-invasive blood pressure measurement",
+    title = "Distribution of ICU stay length by systolic non-invasive blood pressure", 
     x = "Systolic Non-invasive Blood Pressure (mmHg)",
-    y = "ICU Stay Length (Fractional Days)"
+    y = "Total ICU Stay Length (Fractional Days)"
   ) + 
   coord_cartesian(xlim = c(0, 275))
 ```
-The first plot shows two observation with extremely high systolic non-invasive blood pressures (possibly due to recording errors?), which masks the variability in the distribution. The second plot ignores these observations, zooming into the distribution of systolic non-invasive blood pressures between 0-275 mmHg. In the second plot, we can see that patients with systolic non-invasive blood pressures between ~100-150 mmHg tend to have longer ICU stays, compared to patients with lower or higher blood pressures.  
+The first plot shows two observation with extremely high systolic non-invasive blood pressures (possibly due to recording errors?), which masks the variability in the distribution. The second plot ignores these observations, zooming into the distribution of systolic non-invasive blood pressures between 0-275 mmHg. In the second plot, we can see that patients with systolic non-invasive blood pressures between ~100-125 mmHg have the longest total ICU stays, compared to patients with lower or higher blood pressures.  
 
 #### Diastolic Non-invasive Blood Pressure
 
@@ -737,37 +860,41 @@ ggplot(data = mimic_icu_cohort) +
                            y = los),
              position = "jitter") +
   labs(
-    title = "Distribution of ICU stay length by diastolic non-invasive blood pressure measurement",
+    title = "Distribution of ICU stay length by diastolic non-invasive blood pressure",
     x = "Diastolic Non-invasive Blood Pressure (mmHg)",
     y = "ICU Stay Length (Fractional Days)"
   ) 
 
-ggplot(data = mimic_icu_cohort) +
-  geom_point(mapping = aes(x = non_invasive_blood_pressure_diastolic, 
-                           y = los),
-             position = "jitter") +
+mimic_icu_cohort |>
+  group_by(non_invasive_blood_pressure_diastolic) |>
+  summarize(total_los = sum(los)) |>
+  ggplot() +
+  geom_col(mapping = aes(x = non_invasive_blood_pressure_diastolic, 
+                         y = total_los)) +
   labs(
-    title = "Distribution of ICU stay length by diastolic non-invasive blood pressure measurement",
+    title = "Distribution of ICU stay length by diastolic non-invasive blood pressure", 
     x = "Diastolic Non-invasive Blood Pressure (mmHg)",
-    y = "ICU Stay Length (Fractional Days)"
+    y = "Total ICU Stay Length (Fractional Days)"
   ) + 
   coord_cartesian(xlim = c(0, 225))
 ```
-The first plot shows several observations with extremely high diastolic non-invasive blood pressures (possibly due to recording errors?), which masks the variability in the distribution. The second plot ignores these observation, zooming into the distribution of diastolic non-invasive blood pressures between 0-225 mmHg. In the second plot, we can see that patients with diastolic non-invasive blood pressures between ~50-100 mmHg tend to have longer ICU stays, compared to patients with lower or higher blood pressures. 
+The first plot shows several observations with extremely high diastolic non-invasive blood pressures (possibly due to recording errors?), which masks the variability in the distribution. The second plot ignores these observation, zooming into the distribution of diastolic non-invasive blood pressures between 0-225 mmHg. In the second plot, we can see that patients with diastolic non-invasive blood pressures between ~50-75 mmHg have the longest total ICU stays, compared to patients with lower or higher blood pressures. 
 
 #### Respiratory Rate
 
 ```{r}
-ggplot(data = mimic_icu_cohort) +
-  geom_point(mapping = aes(x = respiratory_rate, y = los),
-             position = "jitter") +
+mimic_icu_cohort |>
+  group_by(respiratory_rate) |>
+  summarize(total_los = sum(los)) |>
+  ggplot() +
+  geom_col(mapping = aes(x = respiratory_rate, y = total_los)) +
   labs(
-    title = "Distribution of ICU stay length by respiratory rate measurement",
+    title = "Distribution of ICU stay length by respiratory rate", 
     x = "Respiratory Rate (insp/min)",
-    y = "ICU Stay Length (Fractional Days)"
+    y = "Total ICU Stay Length (Fractional Days)"
   ) 
 ```
-Patients with respiratory rates ~25 insp/min tend to have longer ICU stays, while patients with lower or higher respiratory rates tend to have shorter ICU stays. 
+Patients with respiratory rates ~20 insp/min have the longest total ICU stays, while patients with lower or higher respiratory rates tend to have shorter ICU stays. 
 
 #### Body Temperature
 
@@ -776,22 +903,24 @@ ggplot(data = mimic_icu_cohort) +
   geom_point(mapping = aes(x = temperature_fahrenheit, y = los),
              position = "jitter") +
   labs(
-    title = "Distribution of ICU stay length by body temperature measurement",
+    title = "Distribution of ICU stay length by body temperature",
     x = "Body Temperature (degrees Fahrenheit)",
     y = "ICU Stay Length (Fractional Days)"
   ) 
 
-ggplot(data = mimic_icu_cohort) +
-  geom_point(mapping = aes(x = temperature_fahrenheit, y = los),
-             position = "jitter") +
+mimic_icu_cohort |>
+  group_by(temperature_fahrenheit) |>
+  summarize(total_los = sum(los)) |>
+  ggplot() +
+  geom_col(mapping = aes(x = temperature_fahrenheit, y = total_los)) +
   labs(
-    title = "Distribution of ICU stay length by body temperature measurement",
+    title = "Distribution of ICU stay length by body temperature", 
     x = "Body Temperature (degrees Fahrenheit)",
-    y = "ICU Stay Length (Fractional Days)"
+    y = "Total ICU Stay Length (Fractional Days)"
   ) + 
   coord_cartesian(xlim = c(0, 105))
 ```
-The first plot shows two observations with extremely high body temperatures (possibly due to recording errors?), which masks the variability in the distribution. The second plot ignores these observation, zooming into the distribution of diastolic non-invasive blood pressures between 0-105 degrees Fahrenheit. In the second plot, we can see that most observations are clustered around the average human body temperature, with the longest ICU stays observed for patients with body temperatures slightly below 100 degrees Fahrenheit. Unusually, there are observations with extremely low body temperatures as well. 
+The first plot shows two observations with extremely high body temperatures (possibly due to recording errors?), which masks the variability in the distribution. The second plot ignores these observation, zooming into the distribution of diastolic non-invasive blood pressures between 0-105 degrees Fahrenheit. In the second plot, we can see that most observations are clustered around the average human body temperature, with the longest total ICU stays observed for patients with body temperatures slightly below 100 degrees Fahrenheit. Unusually, there are observations with extremely low body temperatures as well, as seen from the first plot. 
 
 :::
 
@@ -799,13 +928,17 @@ The first plot shows two observations with extremely high body temperatures (pos
 
 **Answer:**
 ```{r}
-ggplot(data = mimic_icu_cohort) +
-  geom_col(mapping = aes(x = first_careunit, y = los)) + 
+mimic_icu_cohort |>
+  group_by(first_careunit) |>
+  summarize(total_los = sum(los)) |>
+  ggplot() +
+  geom_col(mapping = aes(x = fct_reorder(as.factor(first_careunit), total_los), 
+                         y = total_los)) +
   labs(
     title = "Distribution of ICU stay length by first ICU unit", 
     x = "First ICU Unit",
     y = "Total ICU Stay Length (Fractional Days)"
-  ) + 
+  ) +
   coord_flip()
 ```
 Patients transferred to the Medical Intensive Care Unit (MICU) have the longest total ICU stay, followed by patients transferred to the Surgical Intensive Care Unit (SICU) and the Medical/Surgical Intensive Care Unit (MICU/SICU). Patients transferred to Neuro Stepdown have the shortest total ICU stay. 
