@@ -200,6 +200,8 @@ mimic_icu_cohort <- icustays_tble |>
          intime_age = anchor_age + year_diff) |>
   #keep adults only
   filter(intime_age >= 18) |>
+  #remove columns that are no longer needed
+  select(-c(intime_year, year_diff)) |>
   #merge in labevents tibble
   left_join(labevents_tble, by = c("subject_id", "stay_id")) |>
   #merge in chartevents tibble
@@ -219,11 +221,61 @@ Hint: Below is a numerical summary of my tibble after preprocessing:
 
 <iframe width=95% height="500" src="./mimic_icu_cohort_gtsummary.html"></iframe>
 
+```{r}
+#preprocess data 
+mimic_icu_cohort <- mimic_icu_cohort |>
+  mutate(first_careunit = fct_lump_lowfreq(as.factor(first_careunit), 
+                                           other_level = "Other"),
+         last_careunit = fct_lump_lowfreq(as.factor(last_careunit),
+                                          other_level = "Other"),
+         admission_type = fct_lump_lowfreq(as.factor(admission_type),
+                                           other_level = "Other"),
+         admission_location = fct_lump_lowfreq(as.factor(admission_location),
+                                               other_level = "Other"),
+         discharge_location = fct_lump_lowfreq(as.factor(discharge_location),
+                                               other_level = "Other"),
+         race = fct_collapse(as.factor(race),
+                             ASIAN = c("ASIAN", 
+                                       "ASIAN - ASIAN INDIAN",
+                                       "ASIAN - CHINESE", 
+                                       "ASIAN - KOREAN",
+                                       "ASIAN - SOUTH EAST ASIAN"),
+                             BLACK = c("BLACK/AFRICAN",
+                                       "BLACK/AFRICAN AMERICAN",
+                                       "BLACK/CAPE VERDEAN",
+                                       "BLACK/CARIBBEAN ISLAND"),
+                             HISPANIC = c("HISPANIC/LATINO - PUERTO RICAN",
+                                          "HISPANIC/LATINO - DOMINICAN",
+                                          "HISPANIC OR LATINO",
+                                          "HISPANIC/LATINO - GUATEMALAN",
+                                          "HISPANIC/LATINO - SALVADORAN",
+                                          "HISPANIC/LATINO - CUBAN",
+                                          "HISPANIC/LATINO - COLUMBIAN",
+                                          "HISPANIC/LATINO - MEXICAN",
+                                          "HISPANIC/LATINO - HONDURAN",
+                                          "HISPANIC/LATINO - CENTRAL AMERICAN"),
+                             WHITE = c("WHITE",
+                                       "WHITE - OTHER EUROPEAN",
+                                       "WHITE - RUSSIAN",
+                                       "WHITE - BRAZILIAN",
+                                       "WHITE - EASTERN EUROPEAN"),
+                             other_level = "Other"),
+         los_long = ifelse(los >= 2, TRUE, FALSE)
+         ) |>
+  print(width = Inf)
+
+#summarize preprocessed data
+mimic_icu_cohort |>
+  select(-c(subject_id, hadm_id, stay_id, intime, outtime, admittime, dischtime, 
+            deathtime, admit_provider_id, edregtime, edouttime, anchor_age, 
+            anchor_year, anchor_year_group)) |>
+  tbl_summary(by = los_long)
+```
+
 ### Q1.9 Save the final tibble
 
 Save the final tibble to an R data file `mimic_icu_cohort.rds` in the `mimiciv_shiny` folder.
 ```{r}
-#| eval: false
 # make a directory mimiciv_shiny
 if (!dir.exists("mimiciv_shiny")) {
   dir.create("mimiciv_shiny")
