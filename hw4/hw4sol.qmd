@@ -120,8 +120,8 @@ labevents_tble <- tbl(con_bq, "labevents") |>
   filter(row_number() == 1) |>
   #remove columns that are no longer needed 
   select(-c(intime, storetime)) |>
-  #collect to be able to perform pivot_wider
-  collect() |>
+  #remove grouping 
+  ungroup() |>
   #turn data into wide format 
   pivot_wider(names_from = itemid, values_from = valuenum) |>
   #arrange by subject_id 
@@ -137,8 +137,6 @@ labevents_tble <- tbl(con_bq, "labevents") |>
     wbc = "51301",
     glucose = "50931"
   ) |>
-  #remove grouping 
-  ungroup() |>
   print(width = Inf)
 ```
 
@@ -146,8 +144,44 @@ labevents_tble <- tbl(con_bq, "labevents") |>
 
 Connect to `chartevents` table and retrieve a subset that only contain subjects who appear in `icustays_tble` and the chart events listed in HW3. Only keep the first chart events during ICU stay and pivot chart events to become variables/columns. Write all steps in _one_ chain of pipes.
 ```{r}
-# # TODO
-# chartevents_tble <- 
+chartevents_tble <- tbl(con_bq, "chartevents") |>
+  #select necessary columns
+  select(subject_id, stay_id, charttime, itemid, valuenum) |>
+  #filter by vitals we are interested in
+  filter(itemid %in% c(220045, 220179, 220180, 223761, 220210)) |>
+  #join icustays tibble, select necessary columns
+  left_join(
+    select(icustays_tble, subject_id, stay_id, intime),
+    by = c("subject_id", "stay_id"), 
+    relationship = "many-to-many"
+    ) |>
+  #move column to better position
+  relocate(intime, .after = stay_id) |>
+  #filter chart events taken during icu stay
+  filter(charttime >= intime) |>
+  #group data by subject_id, then stay_id, then itemid
+  group_by(subject_id, stay_id, itemid) |>
+  #arrange by charttime (earliest to latest) for each group
+  arrange(charttime, .by_group = TRUE) |>
+  #for each group, select the first row (first chart event during icu stay)
+  filter(row_number() == 1) |>
+  #remove columns that are no longer needed 
+  select(-c(intime, charttime)) |>
+  #remove grouping
+  ungroup() |>
+  #turn data into wide format 
+  pivot_wider(names_from = itemid, values_from = valuenum) |>
+  #arrange by subject_id 
+  arrange(subject_id) |>
+  #rename columns based on correct vital name
+  rename(
+    heart_rate = "220045",
+    non_invasive_blood_pressure_systolic = "220179",
+    non_invasive_blood_pressure_diastolic = "220180",
+    temperature_fahrenheit = "223761",
+    respiratory_rate = "220210"
+  ) |> 
+  print(width = Inf)
 ```
 
 ### Q1.7 Put things together
@@ -155,8 +189,26 @@ Connect to `chartevents` table and retrieve a subset that only contain subjects 
 This step is similar to Q7 of HW3. Using _one_ chain of pipes `|>` to perform following data wrangling steps: (i) start with the `icustays_tble`, (ii) merge in admissions and patients tables, (iii) keep adults only (age at ICU intime >= 18), (iv) merge in the labevents and chartevents tables, (v) `collect` the tibble.
 
 ```{r}
-# # TODO
-# mimic_icu_cohort <- 
+mimic_icu_cohort <- icustays_tble |>
+  #merge in admissions tibble
+  left_join(admissions_tble, by = c("subject_id", "hadm_id")) |>
+  #merge in patients tibble
+  left_join(patients_tble, by = "subject_id") |>
+  #find age at intime 
+  mutate(intime_year = year(intime),
+         year_diff = intime_year - anchor_year,
+         intime_age = anchor_age + year_diff) |>
+  #keep adults only
+  filter(intime_age >= 18) |>
+  #merge in labevents tibble
+  left_join(labevents_tble, by = c("subject_id", "stay_id")) |>
+  #merge in chartevents tibble
+  left_join(chartevents_tble, by = c("subject_id", "stay_id")) |>
+  #arrange by subject_id
+  arrange(subject_id) |>
+  #collect tibble
+  collect() |>
+  print(width = Inf)
 ```
 
 ### Q1.8 Preprocessing
