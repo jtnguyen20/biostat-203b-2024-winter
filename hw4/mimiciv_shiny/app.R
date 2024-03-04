@@ -8,20 +8,26 @@ mimic_icu_cohort <- readRDS("mimic_icu_cohort.rds")
 
 #connect to bigquery 
 #path to the service account token 
-#satoken <- "biostat-203b-2024-winter-313290ce47a6.json"
+satoken <- "biostat-203b-2024-winter-313290ce47a6.json"
 #bigquery authentication using service account
-#bq_auth(path = satoken)
+bq_auth(path = satoken)
 # connect to the bigquery database `biostat-203b-2024-winter.mimic4_v2_2`
-#con_bq <- dbConnect(
-  #bigrquery::bigquery(),
-  #project = "biostat-203b-2024-winter",
-  #dataset = "mimic4_v2_2",
-  #billing = "biostat-203b-2024-winter"
-#)
-#con_bq
+con_bq <- dbConnect(
+  bigrquery::bigquery(),
+  project = "biostat-203b-2024-winter",
+  dataset = "mimic4_v2_2",
+  billing = "biostat-203b-2024-winter"
+)
+con_bq
 
 #load data from bigquery database
 transfers_tble <- tbl(con_bq, "transfers") 
+labevents_tble <- tbl(con_bq, "labevents")
+d_icd_procedures_tble <- tbl(con_bq, "d_icd_procedures")
+procedures_icd_tble <- tbl(con_bq, "procedures_icd") |>
+  mutate(chartdate = as.POSIXct(chartdate)) |>
+  left_join(d_icd_procedures_tble, by = c("icd_code", "icd_version"))
+patients_tble <- tbl(con_bq, "patients")
 
 #define ui 
 ui <- fluidPage(
@@ -58,7 +64,7 @@ ui <- fluidPage(
              sidebarLayout(
                sidebarPanel(
                  numericInput("subject_id", 
-                              "Enter subject_id:",
+                              "Enter subject ID:",
                               value = 10000032,
                               min = 10000032,
                               max = 19999987,
@@ -86,23 +92,56 @@ server <- function(input, output) {
   })
   
   output$adtPlot <- renderPlot({
-    ggplot() +
-      geom_segment(
-        data = transfers_tble |> filter(subject_id == input$subject_id),
-        mapping = aes(
-          x = intime,
-          xend = outtime, 
-          y = "ADT",
-          yend = "ADT",
-          color = careunit,
-          linewidth = str_detect(careunit, "(ICU|CCU)")
-          )
+    plot_data <- reactive({
+      ggplot() +
+        geom_segment(
+          data = transfers_tble |> filter(subject_id == !!input$subject_id),
+          mapping = aes(
+            x = intime, xend = outtime, 
+            y = 0.025, yend = 0.025,
+            color = careunit
+          )#,
+          #linewidth = ifelse(grepl("ICU|CCU", pull({{input$careunit}})), 6, 2)
         ) +
-      labs(
-        title = "Patient __",
-        x = "Calendar Time",
-        y = " "
-        )
+        geom_point(
+          data = labevents_tble |> filter(subject_id == !!input$subject_id),
+          mapping = aes(x = charttime, y = 0),
+          shape = 3
+        ) +
+        geom_point(
+          data = procedures_icd_tble |> filter(subject_id == !!input$subject_id),
+          mapping = aes(
+            x = chartdate, 
+            y = -0.025, 
+            shape = long_title),
+          size = 3
+        ) +
+        labs(
+          title = str_c(
+            "Patient ", input$subject_id, ", "
+          ),
+          x = "Calendar Time",
+          y = " ",
+          shape = "Procedure",
+          color = "Care Unit"
+        ) +
+        theme_bw() +
+        theme(
+          legend.position = "bottom",
+          aspect.ratio = 1/4
+        ) +
+        guides(
+          shape = guide_legend(ncol = 1),
+          color = guide_legend(ncol = 1)
+        ) +
+        scale_y_continuous(
+          breaks = c(-0.025, 0, 0.025),
+          labels = c("Procedure", "Lab", "ADT")
+        ) +
+        coord_cartesian(ylim = c(-0.04, 0.04))
+    })
+    print(plot_data())
+
   })
 }
 
