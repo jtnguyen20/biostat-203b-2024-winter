@@ -36,7 +36,7 @@ diagnoses_icd_tble <- tbl(con_bq, "diagnoses_icd") |>
 #define ui 
 ui <- fluidPage(
   #application title
-  titlePanel("Distribution of Patient Characteristics in MIMIC-IV ICU Cohort"),
+  titlePanel("Patient Information in MIMIC-IV ICU Cohort"),
   #create multiple tabs
   tabsetPanel(
     tabPanel("Patient Characteristics", 
@@ -55,7 +55,8 @@ ui <- fluidPage(
                                "marital_status",
                                "race",
                                "gender",
-                               "los_long"
+                               "lab_events",
+                               "vitals"
                              ),
                              selected = "first_careunit")
                ),
@@ -86,17 +87,78 @@ ui <- fluidPage(
 server <- function(input, output) {
 
   output$charPlot <- renderPlot({
-    mimic_icu_cohort |>
-      ggplot() +
-      geom_bar(mapping = aes(y = .data[[input$variable]])) +
-      labs(
-        title = "Patient Count by Variable of Interest",
-        y = input$variable
-      ) 
+    plot_var <- reactive({
+      if (input$variable %in% c("first_careunit", 
+                                "last_careunit", 
+                                "admission_type",
+                                "admission_location",
+                                "discharge_location",
+                                "insurance",
+                                "language",
+                                "marital_status",
+                                "race",
+                                "gender")) {
+        ggplot() +
+          geom_bar(
+            data = mimic_icu_cohort, 
+            mapping = aes(y = .data[[input$variable]])
+          ) +
+          labs(
+            title = "Patient Count by Variable of Interest",
+            y = input$variable
+          )
+      } else if (input$variable == "lab_events") {
+        mimic_icu_cohort |>
+          select(creatinine, 
+                 potassium, 
+                 sodium, 
+                 chloride, 
+                 bicarbonate, 
+                 hematocrit, 
+                 wbc, 
+                 glucose) |>
+          pivot_longer(cols = everything(), 
+                       names_to = "lab", 
+                       values_to = "value") |>
+          ggplot() +
+          geom_boxplot( 
+            mapping = aes(x = value, y = lab),
+            outlier.shape = NA
+          ) +
+          labs(
+            title = "Distribution of Lab Events",
+            caption = "Outliers removed."
+          ) +
+          coord_cartesian(xlim = c(0, 250))
+      } else if (input$variable == "vitals") {
+        mimic_icu_cohort |>
+          select(heart_rate, 
+                 non_invasive_blood_pressure_systolic, 
+                 non_invasive_blood_pressure_diastolic, 
+                 temperature_fahrenheit, 
+                 respiratory_rate) |>
+          pivot_longer(cols = everything(), 
+                       names_to = "vital", 
+                       values_to = "value") |>
+          ggplot() +
+          geom_boxplot( 
+            mapping = aes(x = value, y = vital),
+            outlier.shape = NA
+          ) +
+          labs(
+            title = "Distribution of Vitals",
+            caption = "Outliers removed."
+          ) +
+          coord_cartesian(xlim = c(0, 200))
+      }
+
+    })
+    print(plot_var())
+
   })
   
   output$adtPlot <- renderPlot({
-    plot <- reactive({
+    plot_adt <- reactive({
       ggplot() +
         geom_segment(
           data = transfers_tble |> 
@@ -177,7 +239,7 @@ server <- function(input, output) {
         ) +
         coord_cartesian(ylim = c(-0.04, 0.04))
     })
-    print(plot())
+    print(plot_adt())
 
   })
 }
