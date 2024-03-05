@@ -28,6 +28,10 @@ procedures_icd_tble <- tbl(con_bq, "procedures_icd") |>
   mutate(chartdate = as.POSIXct(chartdate)) |>
   left_join(d_icd_procedures_tble, by = c("icd_code", "icd_version"))
 patients_tble <- tbl(con_bq, "patients")
+admissions_tble <- tbl(con_bq, "admissions")
+d_icd_diagnoses_tble <- tbl(con_bq, "d_icd_diagnoses")
+diagnoses_icd_tble <- tbl(con_bq, "diagnoses_icd") |>
+  left_join(d_icd_diagnoses_tble, by = c("icd_code", "icd_version")) 
 
 #define ui 
 ui <- fluidPage(
@@ -92,24 +96,29 @@ server <- function(input, output) {
   })
   
   output$adtPlot <- renderPlot({
-    plot_data <- reactive({
+    plot <- reactive({
       ggplot() +
         geom_segment(
-          data = transfers_tble |> filter(subject_id == !!input$subject_id),
+          data = transfers_tble |> 
+            filter(subject_id == !!input$subject_id),
           mapping = aes(
             x = intime, xend = outtime, 
             y = 0.025, yend = 0.025,
-            color = careunit
-          )#,
-          #linewidth = ifelse(grepl("ICU|CCU", pull({{input$careunit}})), 6, 2)
+            color = careunit,
+            linewidth = str_detect(careunit, "ICU|CCU") |>
+              ifelse(6, 2)
+          )
         ) +
         geom_point(
-          data = labevents_tble |> filter(subject_id == !!input$subject_id),
+          data = labevents_tble |> 
+            filter(subject_id == !!input$subject_id),
           mapping = aes(x = charttime, y = 0),
-          shape = 3
+          shape = 3,
+          size = 3
         ) +
         geom_point(
-          data = procedures_icd_tble |> filter(subject_id == !!input$subject_id),
+          data = procedures_icd_tble |> 
+            filter(subject_id == !!input$subject_id),
           mapping = aes(
             x = chartdate, 
             y = -0.025, 
@@ -118,21 +127,49 @@ server <- function(input, output) {
         ) +
         labs(
           title = str_c(
-            "Patient ", input$subject_id, ", "
+            "Patient ", 
+            input$subject_id, 
+            ", ",
+            pull(patients_tble |> 
+                   filter(subject_id == !!input$subject_id), gender),
+            ", ",
+            pull(patients_tble |> 
+                   filter(subject_id == !!input$subject_id), anchor_age), 
+            " years old",
+            ", ", 
+            pull(admissions_tble |> 
+                   filter(subject_id == !!input$subject_id), race)
+          ),
+          subtitle = str_c(
+            diagnoses_icd_tble |> 
+              filter(subject_id == !!input$subject_id) |>
+              filter(row_number() %in% 1) |>
+              pull(long_title), 
+            "\n",
+            diagnoses_icd_tble |> 
+              filter(subject_id == !!input$subject_id) |>
+              filter(row_number() %in% 2) |>
+              pull(long_title),
+            "\n",
+            diagnoses_icd_tble |> 
+              filter(subject_id == !!input$subject_id) |>
+              filter(row_number() %in% 3) |>
+              pull(long_title)
           ),
           x = "Calendar Time",
           y = " ",
           shape = "Procedure",
           color = "Care Unit"
         ) +
-        theme_bw() +
+        theme_light() +
         theme(
           legend.position = "bottom",
           aspect.ratio = 1/4
         ) +
         guides(
           shape = guide_legend(ncol = 1),
-          color = guide_legend(ncol = 1)
+          color = guide_legend(ncol = 1),
+          linewidth = "none"
         ) +
         scale_y_continuous(
           breaks = c(-0.025, 0, 0.025),
@@ -140,7 +177,7 @@ server <- function(input, output) {
         ) +
         coord_cartesian(ylim = c(-0.04, 0.04))
     })
-    print(plot_data())
+    print(plot())
 
   })
 }
