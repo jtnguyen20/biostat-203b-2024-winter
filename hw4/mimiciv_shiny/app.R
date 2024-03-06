@@ -36,7 +36,7 @@ diagnoses_icd_tble <- tbl(con_bq, "diagnoses_icd") |>
 #define ui 
 ui <- fluidPage(
   #application title
-  titlePanel("Patient Information in MIMIC-IV ICU Cohort"),
+  titlePanel("Patient Information for MIMIC-IV ICU Cohort"),
   #create multiple tabs
   tabsetPanel(
     tabPanel("Patient Characteristics", 
