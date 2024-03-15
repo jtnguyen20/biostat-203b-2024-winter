@@ -13,24 +13,50 @@ format:
     code-fold: false
 ---
 
+Load libraries.
+```{r}
+library(GGally)
+library(gtsummary)
+library(tidyverse)
+library(tidymodels)
+library(glmnet)
+library(ranger)
+```
+
 ## Predicting ICU duration
 
 Using the ICU cohort `mimiciv_icu_cohort.rds` you built in Homework 4, develop at least three machine learning approaches (logistic regression with enet regularization, random forest, boosting, SVM, MLP, etc) plus a model stacking approach for predicting whether a patient's ICU stay will be longer than 2 days. You should use the `los_long` variable as the outcome. Your algorithms can use patient demographic information (gender, age at ICU `intime`, marital status, race), ICU admission information (first care unit), the last lab measurements before the ICU stay, and first vital measurements during ICU stay as features. You are welcome to use any feature engineering techniques you think are appropriate; but make sure to not use features that are not available at an ICU stay's `intime`. For instance, `last_careunit` cannot be used in your algorithms. 
 
 1. Data preprocessing and feature engineering.
-```{r}
-#| eval: false
-#load libraries
-library(tidyverse)
 
+**Answer:**
+Read in data and begin preprocessing. 
+```{r}
 #read in mimic icu cohort data
 mimiciv_icu_cohort <- readRDS("mimic_icu_cohort.rds") |>
+  #select features and outcome
+  select(subject_id, hadm_id, stay_id, first_careunit, marital_status, race, 
+         gender, intime_age, bicarbonate, potassium, wbc, chloride, hematocrit, 
+         creatinine, sodium, glucose, non_invasive_blood_pressure_diastolic,
+         non_invasive_blood_pressure_systolic, temperature_fahrenheit, 
+         heart_rate, respiratory_rate, los_long) |>
+  #convert all factor and logical data types to character
+  mutate(first_careunit = as.character(first_careunit),
+         race = as.character(race),
+         los_long = as.character(los_long)) |>
   print(width = Inf)
+
+#check which columns have na values
+mimiciv_icu_cohort |>
+  map_dbl(~sum(is.na(.)))
 ```
+Please see step 2 for additional preprocessing and feature engineering. I needed to split the data first before I could preprocess the training set. 
 
 2. Partition data into 50% training set and 50% test set. Stratify partitioning according to `los_long`. For grading purpose, sort the data by `subject_id`, `hadm_id`, and `stay_id` and use the seed `203` for the initial data split. Below is the sample code.
+
+**Answer:**
+Split data into training and test set. 
 ```{r}
-#| eval: false
 set.seed(203)
 
 # sort
@@ -47,11 +73,253 @@ data_split <- initial_split(
 #split into training and testing
 mimic_other <- training(data_split)
 mimic_test <- testing(data_split)
-
-#preprocessing
-
 ```
+
+::: {.panel-tabset}
+
+#### Logistic Regression
+
+Continue to preprocess and feature engineer the training set using recipe. 
+```{r}
+#recipe 
+logit_recipe <- 
+  recipe(
+    los_long ~ ., 
+    data = mimic_other
+    ) |>
+  #removed unnecessary variables
+  step_rm(subject_id, hadm_id, stay_id) |>
+  #mean imputation for missing numerical values
+  step_impute_mean(bicarbonate, potassium, wbc, chloride, hematocrit, sodium,
+                   creatinine, glucose, temperature_fahrenheit, heart_rate,
+                   non_invasive_blood_pressure_diastolic, 
+                   non_invasive_blood_pressure_systolic,
+                   respiratory_rate) |>
+  #mode imputation for missing categorical values
+  step_impute_mode(marital_status) |>
+  #create dummy variables 
+  step_dummy(all_nominal_predictors()) |>
+  #zero-variance filter
+  step_zv(all_numeric_predictors()) |>
+  #center and scale numeric variables
+  step_normalize(all_numeric_predictors()) |>
+  print()
+```
+
+#### Random Forest
+
+Continue to preprocess and feature engineer the training set using recipe. 
+```{r}
+#recipe 
+rf_recipe <- 
+  recipe(
+    los_long ~ ., 
+    data = mimic_other
+    ) |>
+  #removed unnecessary variables
+  step_rm(subject_id, hadm_id, stay_id) |>
+  #mean imputation for missing numerical values
+  step_impute_mean(bicarbonate, potassium, wbc, chloride, hematocrit, sodium,
+                   creatinine, glucose, temperature_fahrenheit, heart_rate,
+                   non_invasive_blood_pressure_diastolic, 
+                   non_invasive_blood_pressure_systolic,
+                   respiratory_rate) |>
+  #mode imputation for missing categorical values
+  step_impute_mode(marital_status) |>
+  #zero-variance filter
+  step_zv(all_numeric_predictors()) |>
+  print()
+```
+
+:::
 
 3. Train and tune the models using the training set.
 
+::: {.panel-tabset}
+
+#### Logistic Regression
+
+**Answer:**
+Specify the model. 
+```{r}
+logit_mod <- 
+  logistic_reg(
+    penalty = tune(), 
+    mixture = tune()
+  ) |> 
+  set_engine("glmnet", standardize = FALSE) |>
+  print()
+```
+
+Bundle the recipe and model together.
+```{r}
+logit_wf <- workflow() |>
+  add_recipe(logit_recipe) |>
+  add_model(logit_mod) |>
+  print()
+```
+
+Tune the grid.
+```{r}
+logit_param_grid <- grid_regular(
+  penalty(range = c(-6, 3)), 
+  mixture(),
+  levels = c(100, 5)
+  ) |>
+  print()
+```
+
+Set and fit cross-validation.
+```{r}
+#set cross validation partitions
+set.seed(203)
+
+folds <- vfold_cv(mimic_other, v = 5)
+folds
+
+#fit cross validation
+logit_fit <- logit_wf |>
+  tune_grid(
+    resamples = folds,
+    grid = logit_param_grid,
+    metrics = metric_set(roc_auc, accuracy)
+    )
+
+#visualize cross validation results
+logit_fit |>
+  # aggregate metrics from 5 folds
+  collect_metrics() |>
+  print(width = Inf) |>
+  filter(.metric == "roc_auc") |>
+  ggplot(mapping = aes(x = penalty, y = mean, color = factor(mixture))) +
+  geom_point() +
+  labs(x = "Penalty", y = "CV AUC") +
+  scale_x_log10()
+
+#show top 5 models
+logit_fit |>
+  show_best("roc_auc")
+
+#select best model
+best_logit <- logit_fit |>
+  select_best("roc_auc")
+best_logit
+```
+
+#### Random Forest
+
+**Answer:**
+Specify the model. 
+```{r}
+rf_mod <- 
+  rand_forest(
+    mode = "classification",
+    mtry = tune(),
+    trees = tune()
+  ) |> 
+  set_engine("ranger") |>
+  print()
+```
+
+Bundle the recipe and model together.
+```{r}
+rf_wf <- workflow() |>
+  add_recipe(rf_recipe) |>
+  add_model(rf_mod) |>
+  print()
+```
+
+Tune the grid.
+```{r}
+rf_param_grid <- grid_regular(
+  trees(range = c(100L, 500L)), 
+  mtry(range = c(1L, 5L)),
+  levels = c(5, 5)
+  ) |>
+  print()
+```
+
+Set and fit cross-validation.
+```{r}
+#set cross validation partitions
+set.seed(203)
+
+folds <- vfold_cv(mimic_other, v = 5)
+folds
+
+#fit cross validation
+rf_fit <- rf_wf |>
+  tune_grid(
+    resamples = folds,
+    grid = rf_param_grid,
+    metrics = metric_set(roc_auc, accuracy)
+    )
+
+#visualize cross validation results
+rf_fit |>
+  collect_metrics() |>
+  print(width = Inf) |>
+  filter(.metric == "roc_auc") |>
+  ggplot(mapping = aes(x = trees, y = mean, color = factor(mtry))) +
+  geom_point() + 
+  labs(x = "Num. of Trees", y = "CV AUC")
+
+#show top 5 models
+rf_fit |>
+  show_best("roc_auc")
+
+#select best model
+best_rf <- rf_fit |>
+  select_best("roc_auc")
+best_rf
+```
+
+:::
+
 4. Compare model classification performance on the test set. Report both the area under ROC curve and accuracy for each machine learning algorithm and the model stacking. Interpret the results. What are the most important features in predicting long ICU stays? How do the models compare in terms of performance and interpretability?
+
+::: {.panel-tabset}
+
+#### Logistic Regression
+
+**Answer:**
+Finalize the model.
+```{r}
+#final workflow
+logit_final_wf <- logit_wf |>
+  finalize_workflow(best_logit)
+logit_final_wf
+
+#fit the whole training set, then predict test set
+logit_final_fit <- 
+  logit_final_wf |>
+  last_fit(data_split)
+logit_final_fit
+
+#test metrics
+logit_final_fit |> 
+  collect_metrics()
+```
+
+#### Random Forest
+
+**Answer:**
+Finalize the model.
+```{r}
+#final workflow
+rf_final_wf <- rf_wf |>
+  finalize_workflow(best_rf)
+rf_final_wf
+
+#fit the whole training set, then predict test set
+rf_final_fit <- 
+  rf_final_wf |>
+  last_fit(data_split)
+rf_final_fit
+
+#test metrics
+rf_final_fit |> 
+  collect_metrics()
+```
+
+:::
