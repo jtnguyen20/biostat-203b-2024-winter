@@ -13,6 +13,10 @@ format:
     code-fold: false
 ---
 
+## Predicting ICU duration
+
+Using the ICU cohort `mimiciv_icu_cohort.rds` you built in Homework 4, develop at least three machine learning approaches (logistic regression with enet regularization, random forest, boosting, SVM, MLP, etc) plus a model stacking approach for predicting whether a patient's ICU stay will be longer than 2 days. You should use the `los_long` variable as the outcome. Your algorithms can use patient demographic information (gender, age at ICU `intime`, marital status, race), ICU admission information (first care unit), the last lab measurements before the ICU stay, and first vital measurements during ICU stay as features. You are welcome to use any feature engineering techniques you think are appropriate; but make sure to not use features that are not available at an ICU stay's `intime`. For instance, `last_careunit` cannot be used in your algorithms. 
+
 Load libraries.
 ```{r}
 library(GGally)
@@ -21,11 +25,11 @@ library(tidyverse)
 library(tidymodels)
 library(glmnet)
 library(ranger)
+library(xgboost)
+library(keras)
+library(stacks)
+library(vip)
 ```
-
-## Predicting ICU duration
-
-Using the ICU cohort `mimiciv_icu_cohort.rds` you built in Homework 4, develop at least three machine learning approaches (logistic regression with enet regularization, random forest, boosting, SVM, MLP, etc) plus a model stacking approach for predicting whether a patient's ICU stay will be longer than 2 days. You should use the `los_long` variable as the outcome. Your algorithms can use patient demographic information (gender, age at ICU `intime`, marital status, race), ICU admission information (first care unit), the last lab measurements before the ICU stay, and first vital measurements during ICU stay as features. You are welcome to use any feature engineering techniques you think are appropriate; but make sure to not use features that are not available at an ICU stay's `intime`. For instance, `last_careunit` cannot be used in your algorithms. 
 
 1. Data preprocessing and feature engineering.
 
@@ -40,10 +44,10 @@ mimiciv_icu_cohort <- readRDS("mimic_icu_cohort.rds") |>
          creatinine, sodium, glucose, non_invasive_blood_pressure_diastolic,
          non_invasive_blood_pressure_systolic, temperature_fahrenheit, 
          heart_rate, respiratory_rate, los_long) |>
-  #convert all factor and logical data types to character
+  #convert first_careunit and race to character, los_long to factor
   mutate(first_careunit = as.character(first_careunit),
          race = as.character(race),
-         los_long = as.character(los_long)) |>
+         los_long = as.factor(los_long)) |>
   print(width = Inf)
 
 #check which columns have na values
@@ -131,6 +135,32 @@ rf_recipe <-
   print()
 ```
 
+#### Boosting
+
+Continue to preprocess and feature engineer the training set using recipe. 
+```{r}
+gb_recipe <- 
+  recipe(
+    los_long ~ ., 
+    data = mimic_other
+    ) |>
+  #removed unnecessary variables
+  step_rm(subject_id, hadm_id, stay_id) |>
+  #mean imputation for missing numerical values
+  step_impute_mean(bicarbonate, potassium, wbc, chloride, hematocrit, sodium,
+                   creatinine, glucose, temperature_fahrenheit, heart_rate,
+                   non_invasive_blood_pressure_diastolic, 
+                   non_invasive_blood_pressure_systolic,
+                   respiratory_rate) |>
+  #mode imputation for missing categorical values
+  step_impute_mode(marital_status) |>
+  #create dummy variables 
+  step_dummy(all_nominal_predictors()) |>
+  #zero-variance filter
+  step_zv(all_numeric_predictors()) |>
+  print()
+```
+
 :::
 
 3. Train and tune the models using the training set.
@@ -162,9 +192,9 @@ logit_wf <- workflow() |>
 Tune the grid.
 ```{r}
 logit_param_grid <- grid_regular(
-  penalty(range = c(-6, 3)), 
+  penalty(range = c(-4, 2)), 
   mixture(),
-  levels = c(100, 5)
+  levels = c(75, 5)
   ) |>
   print()
 ```
@@ -217,7 +247,7 @@ rf_mod <-
     mtry = tune(),
     trees = tune()
   ) |> 
-  set_engine("ranger") |>
+  set_engine("ranger", importance = "impurity") |>
   print()
 ```
 
@@ -232,9 +262,9 @@ rf_wf <- workflow() |>
 Tune the grid.
 ```{r}
 rf_param_grid <- grid_regular(
-  trees(range = c(100L, 500L)), 
+  trees(range = c(50L, 150L)), 
   mtry(range = c(1L, 5L)),
-  levels = c(5, 5)
+  levels = c(3, 5)
   ) |>
   print()
 ```
@@ -274,6 +304,77 @@ best_rf <- rf_fit |>
 best_rf
 ```
 
+#### Boosting
+
+**Answer:**
+Specify the model. 
+```{r}
+gb_mod <- 
+  boost_tree(
+    mode = "classification",
+    trees = 500, 
+    tree_depth = tune(),
+    learn_rate = tune()
+  ) |> 
+  set_engine("xgboost") |>
+  print()
+```
+
+Bundle the recipe and model together.
+```{r}
+gb_wf <- workflow() |>
+  add_recipe(gb_recipe) |>
+  add_model(gb_mod) |>
+  print()
+```
+
+Tune the grid.
+```{r}
+gb_param_grid <- grid_regular(
+  tree_depth(range = c(1L, 3L)),
+  learn_rate(range = c(-5, 2), trans = log10_trans()),
+  levels = c(3, 5)
+  ) |>
+  print()
+```
+
+Set and fit cross-validation.
+```{r}
+#set cross validation partitions
+set.seed(203)
+
+folds <- vfold_cv(mimic_other, v = 5)
+folds
+
+#fit cross validation
+gb_fit <- gb_wf |>
+  tune_grid(
+    resamples = folds,
+    grid = gb_param_grid,
+    metrics = metric_set(roc_auc, accuracy)
+    )
+gb_fit
+
+#visualize cross validation results
+gb_fit |>
+  collect_metrics() |>
+  print(width = Inf) |>
+  filter(.metric == "roc_auc") |>
+  ggplot(mapping = aes(x = learn_rate, y = mean, color = factor(tree_depth))) +
+  geom_point() +
+  labs(x = "Learning Rate", y = "CV AUC") +
+  scale_x_log10()
+
+#show top 5 models
+gb_fit |>
+  show_best("roc_auc")
+
+#select best model
+best_gb <- gb_fit |>
+  select_best("roc_auc")
+best_gb
+```
+
 :::
 
 4. Compare model classification performance on the test set. Report both the area under ROC curve and accuracy for each machine learning algorithm and the model stacking. Interpret the results. What are the most important features in predicting long ICU stays? How do the models compare in terms of performance and interpretability?
@@ -299,7 +400,14 @@ logit_final_fit
 #test metrics
 logit_final_fit |> 
   collect_metrics()
+
+#extract model coefficients
+logit_final_wf |>
+  fit(mimic_other) |>
+  extract_fit_parsnip() |>
+  vip(geom = "point")
 ```
+The logistic regression model has an AUC of 0.60 and an accuracy of 0.58. Both the AUC and accuracy are low, indicating that the model is not very good at predicting long ICU stays. In this model, the most important features in predicting long ICU stays are `heart_rate` and if the patient's `first_careunit` is MICU or MICU/SICU because they have the highest importance scores according to the variables of importance plot above.
 
 #### Random Forest
 
@@ -320,6 +428,138 @@ rf_final_fit
 #test metrics
 rf_final_fit |> 
   collect_metrics()
+
+#identify variables of importance
+rf_final_wf |>
+  fit(mimic_other) |>
+  extract_fit_parsnip() |>
+  vip(geom = "point")
 ```
+The random forest model has an AUC of 0.63 and an accuracy of 0.60. Both the AUC and accuracy are higher than the AUC and accuracy from the logistic regression model, indicating that the random forest model is  better at predicting long ICU stays than the logistic regression model. In this model, the most important features in predicting long ICU stays are `non_invasive_blood_pressure_systolic`, `heart_rate`, and `hematocrit` because they have the highest importance scores according to the variables of importance plot above.
+
+#### Boosting
+
+**Answer:**
+Finalize the model.
+```{r}
+#final workflow
+gb_final_wf <- gb_wf |>
+  finalize_workflow(best_gb)
+gb_final_wf
+
+#fit the whole training set, then predict test set
+gb_final_fit <- 
+  gb_final_wf |>
+  last_fit(data_split)
+gb_final_fit
+
+#test metrics
+gb_final_fit |> 
+  collect_metrics()
+
+#identify variables of importance
+gb_final_wf |>
+  fit(mimic_other) |>
+  extract_fit_parsnip() |>
+  vip(geom = "point")
+```
+The boosting model has an AUC of 0.65 and an accuracy of 0.61. Both the AUC and accuracy are higher than the AUC and accuracy from the logistic regression model and the random forest model, indicating that the boosting model is better at predicting long ICU stays than the other two models. In this model, the most important features in predicting long ICU stays are `temperature_fahrenheit`, `intime_age`, and `non_invasive_blood_pressure_systolic` because they have the highest importance scores according to the variables of importance plot above.
 
 :::
+
+**Model stacking**
+
+Set up tuning grid for the stacked model.
+```{r}
+#| eval: false
+logit_res <- 
+  tune_grid(
+    object = logit_wf, 
+    resamples = folds, 
+    grid = logit_param_grid,
+    control = control_stack_grid()
+  )
+logit_res
+
+rf_res <- 
+  tune_grid(
+    object = rf_wf, 
+    resamples = folds, 
+    grid = rf_param_grid,
+    control = control_stack_grid()
+  )
+rf_res
+
+gb_res <- 
+  tune_grid(
+    object = gb_wf, 
+    resamples = folds, 
+    grid = gb_param_grid,
+    control = control_stack_grid()
+  )
+gb_res
+```
+
+Build the stacked ensemble.
+```{r}
+#| eval: false
+mimic_model_st <- 
+  # initialize the stack
+  stacks() |>
+  # add candidate members
+  add_candidates(logit_res) |>
+  add_candidates(rf_res) |>
+  add_candidates(gb_res) |>
+  # determine how to combine their predictions
+  blend_predictions(
+    metrics = c("roc_auc")
+    ) |>
+  # fit the candidates with nonzero stacking coefficients
+  fit_members()
+mimic_model_st
+```
+
+Plot results.
+```{r}
+#| eval: false
+autoplot(mimic_model_st, type = "members")
+#top results
+autoplot(mimic_model_st, type = "weights")
+```
+
+Complete the final classification.
+```{r}
+#| eval: false
+mimic_pred <- mimic_test |>
+  bind_cols(predict(mimic_model_st, mimic_test, type = "prob")) |>
+  print(width = Inf)
+
+#compute roc auc for model
+yardstick::roc_auc(
+  mimic_pred,
+  truth = los_long,
+  contains(".pred_FALSE")
+  )
+
+#generate predictions from ensemble members
+mimic_pred <-
+  mimic_test |>
+  select(los_long) |>
+  bind_cols(
+    predict(
+      mimic_model_st,
+      mimic_test,
+      type = "class",
+      members = TRUE
+      )
+    ) |>
+  print(width = Inf)
+
+map(
+  colnames(mimic_pred),
+  ~mean(mimic_pred$los_long == pull(mimic_pred, .x))
+  ) |>
+  set_names(colnames(mimic_pred)) |>
+  as_tibble() |>
+  pivot_longer(c(everything(), -los_long))
+```
