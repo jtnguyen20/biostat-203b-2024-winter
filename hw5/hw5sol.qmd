@@ -204,7 +204,7 @@ Set and fit cross-validation.
 #set cross validation partitions
 set.seed(203)
 
-folds <- vfold_cv(mimic_other, v = 5)
+folds <- vfold_cv(mimic_other, v = 3)
 folds
 
 #fit cross validation
@@ -274,7 +274,7 @@ Set and fit cross-validation.
 #set cross validation partitions
 set.seed(203)
 
-folds <- vfold_cv(mimic_other, v = 5)
+folds <- vfold_cv(mimic_other, v = 3)
 folds
 
 #fit cross validation
@@ -343,7 +343,7 @@ Set and fit cross-validation.
 #set cross validation partitions
 set.seed(203)
 
-folds <- vfold_cv(mimic_other, v = 5)
+folds <- vfold_cv(mimic_other, v = 3)
 folds
 
 #fit cross validation
@@ -407,7 +407,7 @@ logit_final_wf |>
   extract_fit_parsnip() |>
   vip(geom = "point")
 ```
-The logistic regression model has an AUC of 0.60 and an accuracy of 0.58. Both the AUC and accuracy are low, indicating that the model is not very good at predicting long ICU stays. In this model, the most important features in predicting long ICU stays are `heart_rate` and if the patient's `first_careunit` is MICU or MICU/SICU because they have the highest importance scores according to the variables of importance plot above.
+The logistic regression model has an AUC of 0.599 and an accuracy of 0.577. Both the AUC and accuracy are low, indicating that the model is not very good at predicting long ICU stays. In this model, the most important features in predicting long ICU stays are `heart_rate` and if the patient's `first_careunit` is MICU or MICU/SICU because they have the highest importance scores according to the variables of importance plot above.
 
 #### Random Forest
 
@@ -435,7 +435,7 @@ rf_final_wf |>
   extract_fit_parsnip() |>
   vip(geom = "point")
 ```
-The random forest model has an AUC of 0.63 and an accuracy of 0.60. Both the AUC and accuracy are higher than the AUC and accuracy from the logistic regression model, indicating that the random forest model is  better at predicting long ICU stays than the logistic regression model. In this model, the most important features in predicting long ICU stays are `non_invasive_blood_pressure_systolic`, `heart_rate`, and `hematocrit` because they have the highest importance scores according to the variables of importance plot above.
+The random forest model has an AUC of 0.634 and an accuracy of 0.599. Both the AUC and accuracy from the random forest model are higher than the AUC and accuracy from the logistic regression model, indicating that the random forest model is  better at predicting long ICU stays than the logistic regression model. In this model, the most important features in predicting long ICU stays are `non_invasive_blood_pressure_systolic`, `heart_rate`, and `hematocrit` because they have the highest importance scores according to the variables of importance plot above.
 
 #### Boosting
 
@@ -463,18 +463,17 @@ gb_final_wf |>
   extract_fit_parsnip() |>
   vip(geom = "point")
 ```
-The boosting model has an AUC of 0.65 and an accuracy of 0.61. Both the AUC and accuracy are higher than the AUC and accuracy from the logistic regression model and the random forest model, indicating that the boosting model is better at predicting long ICU stays than the other two models. In this model, the most important features in predicting long ICU stays are `temperature_fahrenheit`, `intime_age`, and `non_invasive_blood_pressure_systolic` because they have the highest importance scores according to the variables of importance plot above.
+The boosting model has an AUC of 0.646 and an accuracy of 0.605. Both the AUC and accuracy from the boosting model are higher than the AUC and accuracy from the logistic regression model and the random forest model, indicating that the boosting model is better at predicting long ICU stays than the other two models. In this model, the most important features in predicting long ICU stays are `temperature_fahrenheit`, `intime_age`, and `non_invasive_blood_pressure_systolic` because they have the highest importance scores according to the variables of importance plot above.
 
 :::
 
-**Model stacking**
+## Model Stacking
 
 Set up tuning grid for the stacked model.
 ```{r}
-#| eval: false
 logit_res <- 
   tune_grid(
-    object = logit_wf, 
+    object = logit_wf,
     resamples = folds, 
     grid = logit_param_grid,
     control = control_stack_grid()
@@ -502,7 +501,7 @@ gb_res
 
 Build the stacked ensemble.
 ```{r}
-#| eval: false
+#doParallel::registerDoParallel()
 mimic_model_st <- 
   # initialize the stack
   stacks() |>
@@ -516,12 +515,12 @@ mimic_model_st <-
     ) |>
   # fit the candidates with nonzero stacking coefficients
   fit_members()
+#doParallel::stopImplicitCluster()
 mimic_model_st
 ```
 
 Plot results.
 ```{r}
-#| eval: false
 autoplot(mimic_model_st, type = "members")
 #top results
 autoplot(mimic_model_st, type = "weights")
@@ -529,7 +528,6 @@ autoplot(mimic_model_st, type = "weights")
 
 Complete the final classification.
 ```{r}
-#| eval: false
 mimic_pred <- mimic_test |>
   bind_cols(predict(mimic_model_st, mimic_test, type = "prob")) |>
   print(width = Inf)
@@ -555,6 +553,13 @@ mimic_pred <-
     ) |>
   print(width = Inf)
 
+#compute accuracy for model
+yardstick::accuracy(
+  mimic_pred,
+  truth = los_long, 
+  estimate = .pred_class
+  )
+
 map(
   colnames(mimic_pred),
   ~mean(mimic_pred$los_long == pull(mimic_pred, .x))
@@ -563,3 +568,11 @@ map(
   as_tibble() |>
   pivot_longer(c(everything(), -los_long))
 ```
+
+The ensemble model has an AUC of 0.651 and an accuracy of 0.610. Both the AUC and accuracy from the ensemble model are higher than the AUC and accuracy from all other three individual models, indicating that the ensemble model is the best at predicting long ICU stays. 
+
+In terms of performance, the ensemble model performed the best out of all the models as it had the highest AUC. The boosting model performed the second best, followed by the random forest model, and then finally the logistic regression model, which had the lowest AUC. These results make sense because typically, combining multiple models into an ensemble model will provide the best model, and thus, performance.
+
+In terms of interpretability, the logistic regression model is the most interpretable because the coefficients of a logistic regression model can clearly convey both the effect size and direction of the features on the outcome. Thus, it's easy to understand how increasing or decreasing a feature will impact the outcome. The random forest and boosting models are both less interpretable because they involve averaging predictions from multiple decision trees, which makes it less intuitive to understand how certain features impact the outcome. The ensemble model is probably the least interpretable because it combines all three models into one, making it even more difficult to understand how certain features impact the outcome.
+
+Based off of assessing both the performance and interpretability of the models, we can see that there is a trade-off between maximizing performance and maximizing interpretability.
