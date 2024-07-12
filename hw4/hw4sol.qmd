@@ -1,7 +1,7 @@
 ---
 title: "Biostat 203B Homework 4"
 subtitle: "Due Mar 8 @ 11:59PM"
-author: "Jenny Nguyen, UID: 805947763"
+author: "Jenny Nguyen"
 format:
   html:
     theme: cosmo
