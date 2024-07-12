@@ -1,7 +1,7 @@
 ---
 title: "Biostat 203B Homework 3"
 subtitle: "Due Feb 23 @ 11:59PM"
-author: "Jenny Nguyen, UID: 805947763"
+author: "Jenny Nguyen"
 format:
   html:
     theme: cosmo
@@ -61,7 +61,7 @@ patients_10013310 <- read_csv("~/mimic/hosp/patients.csv.gz") |>
   filter(subject_id == sid)
 admissions_10013310 <- read_csv("~/mimic/hosp/admissions.csv.gz") |>
   filter(subject_id == sid) |>
-  #select first row since only need demographic information from this file
+  #select first row, only need demographic information
   slice_head()
 labevents_10013310 <- arrow::open_dataset("labevents_pq/part-0.parquet", 
                                           format = "parquet") |> 
@@ -78,74 +78,95 @@ d_icd_diagnoses_tble <- read_csv("~/mimic/hosp/d_icd_diagnoses.csv.gz")
 diagnoses_icd_10013310 <- read_csv("~/mimic/hosp/diagnoses_icd.csv.gz") |>
   filter(subject_id == sid) |>
   #join diagnoses dictionary to obtain diagnoses titles later
-  left_join(d_icd_diagnoses_tble, by = c("icd_code", "icd_version")) |>
-  #group by each admission
-  group_by(hadm_id) |>
-  #arrange diagnoses in order for each admission
-  arrange(seq_num, .by_group = TRUE) |>
-  #remove grouping
-  ungroup() |>
-  #select rows with the first three diagnoses during the first admission
-  slice(1:3)
-
-#define title and subtitle
-my_title <- paste(c("Patient", sid, ",", print(patients_10013310$gender), ",", 
-                  print(patients_10013310$anchor_age), ",", 
-                  print(admissions_10013310$race)), collapse = " ")
-my_subtitle <- paste(print(diagnoses_icd_10013310$long_title), collapse = "\n")
+  left_join(d_icd_diagnoses_tble, by = c("icd_code", "icd_version"))
 
 #plot graph
 ggplot() +
-  #plot segment for ADT events 
-  geom_segment(data = transfers_10013310,
-               mapping = aes(
-                 #plot transfer times on x axis 
-                 x = intime, xend = outtime, 
-                 #picked a random y value to place segment on 
-                 y = 0.025, yend = 0.025, 
-                 #set color according to care unit 
-                 color = careunit),
-               #set line width as 6 if care unit was ICU or CCU, and 2 else
-               linewidth = ifelse(grepl("ICU|CCU", transfers_10013310$careunit), 
-                             6, 2)) +
-  #add new layer, plot points for lab events 
-  geom_point(data = labevents_10013310,
-             #plot chart time on x axis, picked y value less than y value for
-             #ADT events
-             mapping = aes(x = charttime, y = 0),
-             #set point shape as crosses
-             shape = 3) +
-  #add new layer, plot points for procedure events 
-  geom_point(data = procedures_icd_10013310,
-             #plot chart date on x axis, picked y value less than y value for 
-             #lab events, set shape according to procedure title
-             mapping = aes(x = chartdate, y = -0.025, shape = long_title)) +
-  #select shapes for each procedure (since default only provides 6)
-  scale_shape_manual(values = c(15, 16, 17, 3, 6, 7, 8, 10, 13)) +
-  #add title, subtitle, and axis/legend titles
-  labs(title = my_title,
-       subtitle = my_subtitle,
+  #plot ADT events 
+  geom_segment(
+    data = transfers_10013310,
+    mapping = aes(
+      x = intime, xend = outtime, 
+      y = 0.025, yend = 0.025, 
+      color = careunit,
+      linewidth = str_detect(careunit, "ICU|CCU") |> 
+        ifelse(6, 2)
+      )
+    ) +
+  #plot lab events 
+  geom_point(
+    data = labevents_10013310,
+    mapping = aes(x = charttime, y = 0),
+    shape = 3,
+    size = 3
+    ) +
+  #plot procedure events 
+  geom_point(
+    data = procedures_icd_10013310,
+    mapping = aes(
+      x = chartdate, 
+      y = -0.025, 
+      shape = long_title),
+    size = 3
+    ) +
+  #select shapes for each procedure 
+  scale_shape_manual(
+    values = c(15, 16, 17, 3, 6, 7, 8, 10, 13)
+    ) +
+  #add titles
+  labs(
+    title = str_c(
+      "Patient ", 
+      sid, 
+      ", ",
+      patients_10013310 |>
+        pull(gender),
+      ", ",
+      patients_10013310 |>
+        pull(anchor_age), 
+      " years old",
+      ", ", 
+      admissions_10013310 |>
+        pull(race)
+      ),
+    subtitle = str_c(
+      diagnoses_icd_10013310 |> 
+        filter(row_number() %in% 1) |>
+        pull(long_title), 
+      "\n",
+      diagnoses_icd_10013310 |> 
+        filter(row_number() %in% 2) |>
+        pull(long_title),
+      "\n",
+      diagnoses_icd_10013310 |> 
+        filter(row_number() %in% 3) |>
+        pull(long_title)
+      ),
        x = "Calendar Time",
        y = " ",
        shape = "Procedure",
-       color = "Care Unit") +
-  #set background to white
-  theme_bw() + 
-  #place legend at bottom of plot, adjust legend size to fit in plot, adjust 
-  #aspect ratio to make plot wider 
-  theme(legend.position = "bottom",
-        legend.text = element_text(size = 5, vjust = 0.5), 
-        legend.key.width = unit(0.1, "cm"),
-        legend.key.size = unit(0.3, "cm"),
-        legend.spacing = unit(0.05, "cm"), 
-        aspect.ratio = 1/4) +
-  #adjust legend columns and rows to fit plot
-  guides(shape = guide_legend(ncol = 1, nrow = 9),
-         color = guide_legend(ncol = 1, nrow = 7)) +
-  #set labels for type of event on y axis 
-  scale_y_continuous(breaks = c(-0.025, 0, 0.025),
-                     labels = c("Procedure", "Lab", "ADT")) +
-  #set y axis limits for the plot
+       color = "Care Unit"
+    ) +
+  theme_light() + 
+  #edits to legend and aspect ratio
+  theme(
+    legend.position = "bottom",
+    legend.text = element_text(size = 5, vjust = 0.5), 
+    legend.key.width = unit(0.1, "cm"),
+    legend.key.size = unit(0.3, "cm"),
+    legend.spacing = unit(0.05, "cm"), 
+    aspect.ratio = 1/4
+    ) +
+  guides(
+    shape = guide_legend(ncol = 1, nrow = 9),
+    color = guide_legend(ncol = 1, nrow = 7),
+    linewidth = "none"
+    ) +
+  #edits to y axis labels
+  scale_y_continuous(
+    breaks = c(-0.025, 0, 0.025),
+    labels = c("Procedure", "Lab", "ADT")) +
+  #set zoom
   coord_cartesian(ylim = c(-0.04, 0.04)) 
 ```
 Above is my visualization for patient 10013310, with the codes and documentation. For the top 3 diagnoses, I selected the top 3 diagnoses from the first hospital admission. For lab events, I used `charttime` instead of `storetime` to document the timing of lab events. According to this plot, this patient has been at the ICU/CCU twice over the course of their hospital stays during May to July. They have had multiple lab events and several procedures throughout their stays. 
@@ -167,15 +188,14 @@ chartevents_10013310 <- arrow::open_dataset("chartevents_pq/part-0.parquet",
   as_tibble()
 icustays_10013310 <- read_csv("~/mimic/icu/icustays.csv.gz") |>
   filter(subject_id == sid) |>
-  #join icu stays with chart events by subject id, hadm id, and stay id
+  #join icu stays with chart events
   left_join(chartevents_10013310, 
             by = c("subject_id", "hadm_id", "stay_id"), 
             relationship = "many-to-many") |>
-  #filter by vitals that we are interested in
+  #filter by interested vitals
   filter(itemid %in% c(220045, 220179, 220180, 223761, 220210))
 
-#define title and labels 
-my_title2 <- paste(c("Patient", sid, "ICU stays - Vitals"), collapse = " ")
+#define labels 
 ylabels <- c("220045" = "HR",
              "220179" = "NBPs",
              "220180" = "NBPd",
@@ -183,27 +203,41 @@ ylabels <- c("220045" = "HR",
              "223761" = "Temperature F")
 
 #plot graph
-ggplot(data = icustays_10013310,
-       #plot chart time on x axis, measurement value on y axis, set color 
-       #according to vital
-       mapping = aes(x = charttime, y = valuenum, color = factor(itemid))) +
+ggplot(
+  data = icustays_10013310,
+  mapping = aes(
+    x = charttime, 
+    y = valuenum, 
+    color = factor(itemid))
+  ) +
   #add lines, don't show legend
   geom_line(show.legend = FALSE) + 
   #add points, don't show legend
   geom_point(show.legend = FALSE) +
   #form panels based on vitals and icu stay
   facet_grid(itemid ~ stay_id,
-             #allow scales to vary across vitals and icu stay
+             #allow scales to vary
              scales = "free",
-             #set vital labels according to previously defined labels 
-             labeller = labeller(itemid = as_labeller(ylabels))) +
+             #set vital labels
+             labeller = labeller(
+               itemid = as_labeller(ylabels)
+               )
+             ) +
   #add title 
-  labs(title = my_title2) +
-  #set background to light 
+  labs(
+    title = str_c(
+      "Patient ", 
+      sid, 
+      " ",
+      "ICU stays - Vitals"
+      )
+    ) +
   theme_light() + 
   #remove axis titles 
-  theme(axis.title.x = element_blank(),
-        axis.title.y = element_blank()) +
+  theme(
+    axis.title.x = element_blank(),
+    axis.title.y = element_blank()
+    ) +
   #include more space between x axis text
   scale_x_datetime(guide = guide_axis(n.dodge = 2)) +
   #set y axis breaks 
@@ -310,7 +344,7 @@ ggplot(data = admissions_tble) +
     y = "Count"
   ) 
 ```
-Yes, there is an unusually high number of admissions that occur at 0am and 7am, relative to the other hours in the morning. Aside from these two unusual hours, admissions are generally low in the morning; however, admissions start to increase in the early afternoon and stay at high numbers during the night. 
+Yes, there is an unusually high number of admissions that occur at 0am and 7am, relative to the other hours in the morning. This could be due to opening/closing times of typical hospital hours. Aside from these two unusual hours, admissions are generally low in the morning; however, admissions start to increase in the early afternoon and stay at high numbers during the night. 
 
 - admission minute (anything unusual?)  
 
