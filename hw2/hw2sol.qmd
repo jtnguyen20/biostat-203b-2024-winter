@@ -1,7 +1,7 @@
 ---
 title: "Biostat 203B Homework 2"
 subtitle: Due Feb 9 @ 11:59PM
-author: "Jenny Nguyen, UID: 805947763"
+author: "Jenny Nguyen"
 format:
   html:
     theme: cosmo
@@ -102,17 +102,17 @@ Re-ingest `admissions.csv.gz` by indicating appropriate column data types in `re
 
 **Answer:**
 ```{r}
-read_csv("~/mimic/hosp/admissions.csv.gz", col_types = "iiTTTccccccccTTi")
-read_csv("~/mimic/hosp/admissions.csv.gz", col_types = "iiTTTccccccccTTi") |> 
+read_csv("~/mimic/hosp/admissions.csv.gz", col_types = "iiTTTfcffffffTTi")
+read_csv("~/mimic/hosp/admissions.csv.gz", col_types = "iiTTTfcffffffTTi") |> 
   system.time()
 ```
-Yes, the run time does change slightly, by going down around 0.01 seconds. 
+Yes, the run time does change slightly, by going down around 0.1 seconds. 
 
 ```{r}
-read_csv("~/mimic/hosp/admissions.csv.gz", col_types = "iiTTTccccccccTTi") |> 
+read_csv("~/mimic/hosp/admissions.csv.gz", col_types = "iiTTTfcffffffTTi") |> 
   pryr::object_size()
 ```
-Now, the resultant tibble uses 50.13 MB of memory, which went down from 55.31 MB of memory before. 
+Now, the resultant tibble uses 38.06 MB of memory, which went down from 55.31 MB of memory before. 
 
 ## Q2. Ingest big data files
 
@@ -190,7 +190,7 @@ There are 24855910 lines in this new file, including the header.
 read_csv("labevents_filtered.csv.gz")
 read_csv("labevents_filtered.csv.gz") |> system.time()
 ```
-It took around 11 seconds for `read_csv` to ingest `labevents_filtered.csv.gz`. 
+It took around 12 seconds for `read_csv` to ingest `labevents_filtered.csv.gz`. 
 
 ### Q2.4 Ingest `labevents.csv` by Apache Arrow
 
@@ -212,9 +212,8 @@ Then use [`arrow::open_dataset`](https://arrow.apache.org/docs/r/reference/open_
 ```{r}
 arrow::open_dataset("labevents.csv", format = "csv") |> 
   select(subject_id, itemid, charttime, valuenum) |>
-  filter(itemid == 50912 | itemid == 50971 | itemid == 50983 | itemid == 50902 | 
-           itemid == 50882 | itemid == 51221 | itemid == 51301 | 
-           itemid == 50931) |>
+  filter(itemid %in% c(50912, 50971, 50983, 50902, 
+                       50882, 51221, 51301, 50931)) |>
   as_tibble() |>
   system.time()
 ```
@@ -223,9 +222,8 @@ It took around 28 seconds for the ingest+select+filter process to run.
 ```{r}
 labevents_filtered <- arrow::open_dataset("labevents.csv", format = "csv") |> 
   select(subject_id, itemid, charttime, valuenum) |>
-  filter(itemid == 50912 | itemid == 50971 | itemid == 50983 | itemid == 50902 | 
-           itemid == 50882 | itemid == 51221 | itemid == 51301 | 
-           itemid == 50931) |>
+  filter(itemid %in% c(50912, 50971, 50983, 50902, 
+                       50882, 51221, 51301, 50931)) |>
   as_tibble()
 summarize(labevents_filtered, rows = n())
 head(labevents_filtered, n = 10)
@@ -254,26 +252,24 @@ arrow::write_dataset(labevents, "labevents_parquet", format = "parquet")
 ```{r}
 file.size("labevents_parquet/part-0.parquet")
 ```
-The Parquet file is 2.07 GB. 
+The Parquet file is 1.9 GB. 
 
 ```{r}
 arrow::open_dataset("labevents_parquet/part-0.parquet", format = "parquet") |> 
   select(subject_id, itemid, charttime, valuenum) |>
-  filter(itemid == 50912 | itemid == 50971 | itemid == 50983 | itemid == 50902 | 
-           itemid == 50882 | itemid == 51221 | itemid == 51301 | 
-           itemid == 50931) |>
+  filter(itemid %in% c(50912, 50971, 50983, 50902, 
+                       50882, 51221, 51301, 50931)) |>
   as_tibble() |>
   system.time()
 ```
-It took around 4 seconds for the ingest+select+filter process of the Parquet file to run. 
+It took around 2 seconds for the ingest+select+filter process of the Parquet file to run. 
 
 ```{r}
 labevents_parquet <- arrow::open_dataset("labevents_parquet/part-0.parquet", 
                                          format = "parquet") |> 
   select(subject_id, itemid, charttime, valuenum) |>
-  filter(itemid == 50912 | itemid == 50971 | itemid == 50983 | itemid == 50902 | 
-           itemid == 50882 | itemid == 51221 | itemid == 51301 | 
-           itemid == 50931) |>
+  filter(itemid %in% c(50912, 50971, 50983, 50902, 
+                       50882, 51221, 51301, 50931)) |>
   as_tibble()
 summarize(labevents_parquet, rows = n())
 head(labevents_parquet, n = 10)
@@ -297,22 +293,20 @@ Ingest the Parquet file, convert it to a DuckDB table by [`arrow::to_duckdb`](ht
 arrow::open_dataset("labevents_parquet/part-0.parquet", format = "parquet") |>
   arrow::to_duckdb() |>
   select(subject_id, itemid, charttime, valuenum) |>
-  filter(itemid == 50912 | itemid == 50971 | itemid == 50983 | itemid == 50902 | 
-           itemid == 50882 | itemid == 51221 | itemid == 51301 | 
-           itemid == 50931) |>
+  filter(itemid %in% c(50912, 50971, 50983, 50902, 
+                       50882, 51221, 51301, 50931)) |>
   as_tibble() |>
   system.time()
 ```
-It took around 3 seconds for the ingest+select+filter process of the Parquet file converted to a DuckDB table to run. 
+It took around 2 seconds for the ingest+select+filter process of the Parquet file converted to a DuckDB table to run. 
 
 ```{r}
 labevents_duckdb <- arrow::open_dataset("labevents_parquet/part-0.parquet", 
                                         format = "parquet") |>
   arrow::to_duckdb() |>
   select(subject_id, itemid, charttime, valuenum) |>
-  filter(itemid == 50912 | itemid == 50971 | itemid == 50983 | itemid == 50902 | 
-           itemid == 50882 | itemid == 51221 | itemid == 51301 | 
-           itemid == 50931) |>
+  filter(itemid %in% c(50912, 50971, 50983, 50902, 
+                       50882, 51221, 51301, 50931)) |>
   arrange(subject_id, charttime, itemid) |>
   as_tibble()
 summarize(labevents_duckdb, rows = n())
@@ -356,8 +350,7 @@ Lastly, I used `arrow::open_dataset` to ingest the Parquet file, selected the co
 chartevents_parquet <- arrow::open_dataset("chartevents_parquet/part-0.parquet", 
                                            format = "parquet") |> 
   select(subject_id, itemid, charttime, valuenum) |>
-  filter(itemid == 220045 | itemid == 220181 | itemid == 220179 | 
-           itemid == 223761 | itemid == 220210) |>
+  filter(itemid %in% c(220045, 220181, 220179, 223761, 220210)) |>
   as_tibble()
 summarize(chartevents_parquet, rows = n())
 head(chartevents_parquet, n = 10)
