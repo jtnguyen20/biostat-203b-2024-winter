@@ -1,7 +1,7 @@
 ---
 title: "Biostat 203B Homework 1"
 subtitle: Due Jan 26, 2024 @ 11:59PM
-author: "Jenny Nguyen, UID: 805947763"
+author: "Jenny Nguyen"
 format:
   html:
     theme: cosmo
@@ -110,33 +110,39 @@ zcat < ~/mimic/hosp/admissions.csv.gz | awk 'END {print NR}'
 There are 431232 rows in the `admissions.csv.gz` file, including the header. 
 
 ```{bash}
-zcat < ~/mimic/hosp/admissions.csv.gz | awk -F, '{print $1}' | sort | uniq | wc -l
+zcat < ~/mimic/hosp/admissions.csv.gz | awk -F, '{print $1}' | 
+grep -v 'subject_id' | sort | uniq | wc -l
 ```
-There are 180733 unique patients (subtracted 1 to exclude counting the header) in the `admissions.csv.gz` file. 
+There are 180733 unique patients in the `admissions.csv.gz` file. 
 
 ```{bash}
-zcat < ~/mimic/hosp/patients.csv.gz | awk -F, '{print $1}' | sort | uniq | wc -l
+zcat < ~/mimic/hosp/patients.csv.gz | awk -F, '{print $1}' | 
+grep -v 'subject_id' | sort | uniq | wc -l
 ```
-The number of patients listed in the `patients.csv.gz` file is 299712 (subtracted 1 to exclude counting the header). Thus, the number of unique patients in the `admissions.csv.gz` file does not match the number of patients in the `patients.csv.gz` file. 
+The number of patients listed in the `patients.csv.gz` file is 299712. Thus, the number of unique patients in the `admissions.csv.gz` file does not match the number of patients in the `patients.csv.gz` file. 
 
 6. What are the possible values taken by each of the variable `admission_type`, `admission_location`, `insurance`, and `race`? Also report the count for each unique value of these variables. (Hint: combine Linux commands `zcat`, `head`/`tail`, `awk`, `uniq -c`, `wc`, and so on; skip the header line.)
 
 **Answer:** The possible values taken by the variable `admission_type` and the count for each unique value are displayed below. 
 ```{bash}
-zcat < ~/mimic/hosp/admissions.csv.gz | awk -F, '{print $6}' | grep -v 'admission_type' | sort | uniq -c 
+zcat < ~/mimic/hosp/admissions.csv.gz | awk -F, '{print $6}' | 
+grep -v 'admission_type' | sort | uniq -c 
 ```
 The possible values taken by the variable `admission_location` and the count for each unique value are displayed below. 
 ```{bash}
-zcat < ~/mimic/hosp/admissions.csv.gz | awk -F, '{print $8}' | grep -v 'admission_location' | sort | uniq -c 
+zcat < ~/mimic/hosp/admissions.csv.gz | awk -F, '{print $8}' | 
+grep -v 'admission_location' | sort | uniq -c 
 ```
 The possible values taken by the variable `insurance` and the count for each unique value are displayed below. 
 ```{bash}
-zcat < ~/mimic/hosp/admissions.csv.gz | awk -F, '{print $10}' | grep -v 'insurance' | sort | uniq -c 
+zcat < ~/mimic/hosp/admissions.csv.gz | awk -F, '{print $10}' | 
+grep -v 'insurance' | sort | uniq -c 
 ```
 
 The possible values taken by the variable `race` and the count for each unique value are displayed below. 
 ```{bash}
-zcat < ~/mimic/hosp/admissions.csv.gz | awk -F, '{print $13}' | grep -v 'race' | sort | uniq -c 
+zcat < ~/mimic/hosp/admissions.csv.gz | awk -F, '{print $13}' | 
+grep -v 'race' | sort | uniq -c 
 ```
 
 7. _To compress, or not to compress. That's the question._ Let's focus on the big data file `labevents.csv.gz`. Compare compressed gz file size to the uncompressed file size. Compare the run times of `zcat < ~/mimic/hosp/labevents.csv.gz | wc -l` versus `wc -l labevents.csv`. Discuss the trade off between storage and speed for big data files. (Hint: `gzip -dk < FILENAME.gz > ./FILENAME`. Remember to delete the large `labevents.csv` file after the exercise.)
